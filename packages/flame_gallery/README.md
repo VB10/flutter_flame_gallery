@@ -15,7 +15,7 @@ final result = await FlameGallery.show(context, game: const FruitSlice());
 
 | Fruit Slice | Ruins Runner | Sweet Swap | Note Rush |
 |:---:|:---:|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/fruit_slice.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/runner.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/sweet_swap.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/note_rush.png" width="180"> |
+| <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/fruit_slice.gif" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/runner.gif" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/sweet_swap.gif" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/note_rush.gif" width="180"> |
 | Swipe to slice, avoid bombs | 3 lanes: swipe, jump, slide | Match three or more | Tap notes on the beat |
 
 ## Why

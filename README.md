@@ -13,14 +13,16 @@ final result = await FlameGallery.show(context, game: const FruitSlice());
 
 **[Website](https://vb10.github.io/flutter_flame_gallery/)** · **[Play in the browser](https://vb10.github.io/flutter_flame_gallery/play/)** · **[pub.dev](https://pub.dev/packages/flame_gallery)**
 
+<p align="center"><img src="site/images/showcase.gif" width="800" alt="The four games being played: Fruit Slice, Ruins Runner, Sweet Swap and Note Rush"></p>
+
 ## The games
 
 | | Game | Mechanic | The interesting part |
 |---|---|---|---|
-| <img src="packages/flame_gallery/screenshots/fruit_slice.png" width="140" alt="fruit_slice screenshot"> | **Fruit Slice**<br>`FruitSlice` | Swipe to slice fruit, chain combos in one stroke, avoid bombs. | Throws are planned from physics (`v = √(2gh)`) so every fruit peaks inside the screen; swipes are tested segment-vs-circle so fast strokes never skip a fruit; halves are the sprite split with `srcPosition`. |
-| <img src="packages/flame_gallery/screenshots/runner.png" width="140" alt="runner screenshot"> | **Ruins Runner**<br>`EndlessRunner` | Three lanes: swipe to change lane, up to jump logs, down to slide under arches, collect coins. | The simulated step is clamped to 1/30 s so a jank frame cannot tunnel an obstacle through the hit window; a row planner guarantees a passable lane (tested over 50 seeds × 200 rows). |
-| <img src="packages/flame_gallery/screenshots/sweet_swap.png" width="140" alt="sweet_swap screenshot"> | **Sweet Swap**<br>`SweetSwap` | Match three or more, cascades multiply points, move / time limits, target scores. | A pure Dart board produces `CascadeStep`s; Flame plays them through a stage queue (each stage returns its duration) with input locked; end conditions are evaluated only after the cascade settles. `seed` gives every player the same board. |
-| <img src="packages/flame_gallery/screenshots/note_rush.png" width="140" alt="note_rush screenshot"> | **Note Rush**<br>`NoteRush` | Notes fall down four lanes; tap on the beat. Perfect / Great / Good windows, combos up to ×4. | Notes are positioned from the song clock, never from accumulated `dt`; the clock follows the music player's position (pluggable `RhythmAudio`) with `audioLatency` compensation. |
+| <img src="site/images/fruit_slice.gif" width="140" alt="fruit_slice gameplay"> | **Fruit Slice**<br>`FruitSlice` | Swipe to slice fruit, chain combos in one stroke, avoid bombs. | Throws are planned from physics (`v = √(2gh)`) so every fruit peaks inside the screen; swipes are tested segment-vs-circle so fast strokes never skip a fruit; halves are the sprite split with `srcPosition`. |
+| <img src="site/images/runner.gif" width="140" alt="runner gameplay"> | **Ruins Runner**<br>`EndlessRunner` | Three lanes: swipe to change lane, up to jump logs, down to slide under arches, collect coins. | The simulated step is clamped to 1/30 s so a jank frame cannot tunnel an obstacle through the hit window; a row planner guarantees a passable lane (tested over 50 seeds × 200 rows). |
+| <img src="site/images/sweet_swap.gif" width="140" alt="sweet_swap gameplay"> | **Sweet Swap**<br>`SweetSwap` | Match three or more, cascades multiply points, move / time limits, target scores. | A pure Dart board produces `CascadeStep`s; Flame plays them through a stage queue (each stage returns its duration) with input locked; end conditions are evaluated only after the cascade settles. `seed` gives every player the same board. |
+| <img src="site/images/note_rush.gif" width="140" alt="note_rush gameplay"> | **Note Rush**<br>`NoteRush` | Notes fall down four lanes; tap on the beat. Perfect / Great / Good windows, combos up to ×4. | Notes are positioned from the song clock, never from accumulated `dt`; the clock follows the music player's position (pluggable `RhythmAudio`) with `audioLatency` compensation. |
 
 Every game takes a `GameTheme` (color scheme, font, logo), `GameStrings` (all texts, English and Turkish included) and its own immutable config.
 Usage and configuration: [flame_gallery package README](packages/flame_gallery/README.md).

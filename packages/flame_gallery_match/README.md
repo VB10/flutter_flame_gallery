@@ -2,7 +2,7 @@
 
 **Sweet Swap** for [Flame Gallery](https://pub.dev/packages/flame_gallery): a match-three puzzle. Swap neighbouring sweets to line up three or more, set off cascades and reach the target before the moves run out.
 
-<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/sweet_swap.png" width="240" alt="Sweet Swap gameplay">
+<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/sweet_swap.gif" width="240" alt="Sweet Swap gameplay">
 
 Most apps depend on [`flame_gallery`](https://pub.dev/packages/flame_gallery) and call
 `FlameGallery.show(context, game: const SweetSwap())`. Depend on this package directly if you only need this game.

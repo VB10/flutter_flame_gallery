@@ -2,7 +2,7 @@
 
 **Fruit Slice** for [Flame Gallery](https://pub.dev/packages/flame_gallery): swipe across the screen to slice fruit, chain combos and stay away from the bombs.
 
-<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/fruit_slice.png" width="240" alt="Fruit Slice gameplay">
+<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/fruit_slice.gif" width="240" alt="Fruit Slice gameplay">
 
 Most apps depend on [`flame_gallery`](https://pub.dev/packages/flame_gallery) and call
 `FlameGallery.show(context, game: const FruitSlice())`. Depend on this package directly if you only need this game.

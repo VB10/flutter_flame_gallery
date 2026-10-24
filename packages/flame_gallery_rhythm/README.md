@@ -2,7 +2,7 @@
 
 **Note Rush** for [Flame Gallery](https://pub.dev/packages/flame_gallery): notes fall down four lanes; tap a lane when its note reaches the line, in time with the music.
 
-<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/note_rush.png" width="240" alt="Note Rush gameplay">
+<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/note_rush.gif" width="240" alt="Note Rush gameplay">
 
 Most apps depend on [`flame_gallery`](https://pub.dev/packages/flame_gallery) and call
 `FlameGallery.show(context, game: NoteRush(audio: myAudio))`. Depend on this package directly if you only need this game.

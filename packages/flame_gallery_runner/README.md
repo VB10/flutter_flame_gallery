@@ -2,7 +2,7 @@
 
 **Ruins Runner** for [Flame Gallery](https://pub.dev/packages/flame_gallery): a three-lane endless runner seen from above. Dodge stones, jump logs, slide under arches and collect coins while the ruins speed up.
 
-<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/runner.png" width="240" alt="Ruins Runner gameplay">
+<img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/site/images/runner.gif" width="240" alt="Ruins Runner gameplay">
 
 Most apps depend on [`flame_gallery`](https://pub.dev/packages/flame_gallery) and call
 `FlameGallery.show(context, game: const EndlessRunner())`. Depend on this package directly if you only need this game.
