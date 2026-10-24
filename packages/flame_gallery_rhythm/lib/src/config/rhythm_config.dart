@@ -14,6 +14,7 @@ final class RhythmConfig {
     this.missLimit,
     this.noteSprites = RhythmSprites.notes,
     this.background,
+    this.audioLatency = Duration.zero,
   }) : assert(lanes >= minLanes && lanes <= maxLanes, 'lanes must be 2..6'),
        assert(missLimit == null || missLimit > 0, 'missLimit must be > 0');
 
@@ -36,19 +37,28 @@ final class RhythmConfig {
   /// Optional full screen background image, stretched to cover.
   final GameAsset? background;
 
+  /// How much later the player hears the music than `RhythmAudio.position`
+  /// reports (output buffers, Bluetooth headphones: often 100-250 ms). Notes
+  /// and timing windows shift by this amount. Ignored without audio.
+  final Duration audioLatency;
+
+  /// Nullable fields take a [ValueGetter] so they can also be cleared:
+  /// `copyWith(missLimit: () => null)` plays the whole song again.
   RhythmConfig copyWith({
     RhythmSong? song,
     int? lanes,
     RhythmDifficulty? difficulty,
-    int? missLimit,
+    ValueGetter<int?>? missLimit,
     List<GameAsset>? noteSprites,
-    GameAsset? background,
+    ValueGetter<GameAsset?>? background,
+    Duration? audioLatency,
   }) => RhythmConfig(
     song: song ?? this.song,
     lanes: lanes ?? this.lanes,
     difficulty: difficulty ?? this.difficulty,
-    missLimit: missLimit ?? this.missLimit,
+    missLimit: missLimit == null ? this.missLimit : missLimit(),
     noteSprites: noteSprites ?? this.noteSprites,
-    background: background ?? this.background,
+    background: background == null ? this.background : background(),
+    audioLatency: audioLatency ?? this.audioLatency,
   );
 }

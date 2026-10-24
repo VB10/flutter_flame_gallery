@@ -1,6 +1,8 @@
 /// Core contracts, host page and shared overlays for Flame Gallery games.
 library;
 
+export 'src/effect/floating_label.dart';
+export 'src/effect/gallery_burst.dart';
 export 'src/game/gallery_flame_game.dart';
 export 'src/game/gallery_game.dart';
 export 'src/game/game_overlays.dart';

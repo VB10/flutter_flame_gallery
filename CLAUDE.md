@@ -37,7 +37,6 @@ packages/
   flame_gallery/   facade: FlameGallery.show + re-exports core and all games.
 apps/example/      demo host app (iOS, Android, web; lib/app, lib/features/<feature>/{model,service,view}) + maestro/.
 site/              GitHub Pages landing page (pages.yml adds the web demo under /play/).
-marketing/         promo.mp4, poster.png, og.png — rebuilt by tool/promo/make_promo.py.
 .github/workflows/ ci.yml (format, analyze, test, publish dry-run, web build), publish.yml (per package tags), pages.yml.
 ```
 
@@ -90,9 +89,12 @@ Use the `add-game` skill (`.claude/skills/add-game`) to scaffold a new game.
 - Fast-moving games clamp the simulated step (`runner`: `_maxStep = 1/30`) so a jank frame cannot tunnel objects through hit windows; Flame does not cap `dt`.
 - `GameHostPage` runs games in `SystemUiMode.immersiveSticky` (restores `edgeToEdge`; `FlameGallery.show(immersive: false)` opts out) and the engine pauses 0.8s after game over (battery; also lets UI tests see an idle screen).
 - Turn/animation-based games (match) never end mid-animation: end conditions that fire while busy are deferred to the settle stage so no awarded points are lost.
-- Every `ValueNotifier` a game creates is disposed in `onRemove`.
+- Every `ValueNotifier` a game creates is disposed in `onRemove`. `GalleryFlameGame.onRemove` clears the game's private `Images` cache (Flame only does that in `dispose()`, which `GameWidget` never calls).
+- Exported game classes (`SliceGame`, `RunnerGame`, ...) keep package-internal entry points (input handlers, spawners, layout) behind `@internal` (from `flutter/foundation.dart`); hosts only read the `ValueListenable`s.
+- Configs and themes: `copyWith` takes `ValueGetter<T?>?` for nullable fields (`copyWith(bomb: () => null)` clears, omitting keeps).
+- Effects: use `GalleryBurst.at` and `FloatingLabel` from core; create `TextPaint`s once (e.g. in `onLoad`), never per label.
 - Minimal comments: public API docs + non-obvious math only.
-- Lints: `very_good_analysis` 11 + root `analysis_options.yaml`. Disabled on purpose: `unnecessary_type_name_in_constructor` (keep classic constructors, like Coverz), `discarded_futures` (Flame `add()` returns `FutureOr`).
+- Lints: `very_good_analysis` 11 + root `analysis_options.yaml`. Disabled on purpose: `unnecessary_type_name_in_constructor` (keep classic constructor syntax), `discarded_futures` (Flame `add()` returns `FutureOr`).
 - Done = `melos run analyze` clean + `melos run test` green.
 
 ## Testing
@@ -113,7 +115,7 @@ Use the `add-game` skill (`.claude/skills/add-game`) to scaffold a new game.
 
 ## Publishing
 
-Package names are `flame_gallery*` (all MIT, repo github.com/VB10/flame_gallery). Every package needs README, CHANGELOG, LICENSE, `example/example.md`; the facade carries the pub.dev gallery (`screenshots:` in its pubspec). Order: core → games → facade. First versions by hand (`flutter pub publish`), later via tags `<package>-v<version>` (publish.yml, OIDC). `flutter pub publish --dry-run` must report 0 warnings; the repo must be a git repo or `build/` leaks into the archive.
+Package names are `flame_gallery*` (all MIT, repo github.com/VB10/flutter_flame_gallery). Every package needs README, CHANGELOG, LICENSE, `example/example.md`; the facade carries the pub.dev gallery (`screenshots:` in its pubspec). Order: core → games → facade. First versions by hand (`flutter pub publish`), later via tags `<package>-v<version>` (publish.yml, OIDC). `flutter pub publish --dry-run` must report 0 warnings; the repo must be a git repo or `build/` leaks into the archive.
 
 ## IP
 

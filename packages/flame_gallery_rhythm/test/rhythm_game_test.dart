@@ -33,12 +33,22 @@ final class _FakeAudio implements RhythmAudio {
   Future<void> stop() async => calls.add('stop');
 }
 
-RhythmGame Function() _game({int? missLimit, RhythmAudio? audio}) => () {
+RhythmGame Function() _game({
+  int? missLimit,
+  RhythmAudio? audio,
+  Duration audioLatency = Duration.zero,
+  RhythmLabels labels = RhythmLabels.en,
+}) => () {
   final game = RhythmGame(
-    config: RhythmConfig(song: _song, missLimit: missLimit),
+    config: RhythmConfig(
+      song: _song,
+      missLimit: missLimit,
+      audioLatency: audioLatency,
+    ),
     colors: ColorScheme.fromSeed(seedColor: Colors.indigo),
     gameId: NoteRush.id,
     audio: audio,
+    labels: labels,
   );
   for (final name in GameOverlays.all) {
     game.overlays.addEntry(name, (_, _) => const SizedBox.shrink());
@@ -127,6 +137,63 @@ void main() {
         ..start()
         ..update(_step);
       expect(game.songTime, 2);
+    },
+  );
+
+  testWithGame<RhythmGame>(
+    'audio latency shifts the clock back to what the player hears',
+    _game(
+      audio: _FakeAudio()..fakePosition = const Duration(seconds: 2),
+      audioLatency: const Duration(milliseconds: 200),
+    ),
+    (game) async {
+      game
+        ..start()
+        ..update(_step);
+      expect(game.songTime, closeTo(1.8, 1e-9));
+    },
+  );
+
+  testWithGame<RhythmGame>(
+    'the clock waits for the music to report, then runs on its own',
+    _game(audio: _FakeAudio()),
+    (game) async {
+      game
+        ..start()
+        ..update(0.5)
+        ..update(0.5);
+      expect(game.songTime, 0);
+
+      game.update(0.3);
+      expect(game.songTime, closeTo(0.3, 1e-9));
+    },
+  );
+
+  final droppingAudio = _FakeAudio()..fakePosition = const Duration(seconds: 2);
+  testWithGame<RhythmGame>(
+    'a missing position report continues from the music, no jump',
+    _game(audio: droppingAudio),
+    (game) async {
+      game
+        ..start()
+        ..update(_step);
+      droppingAudio.fakePosition = null;
+      game.update(0.1);
+      expect(game.songTime, closeTo(2.1, 1e-9));
+    },
+  );
+
+  testWithGame<RhythmGame>(
+    'judgement labels come from RhythmLabels',
+    _game(labels: RhythmLabels.tr),
+    (game) async {
+      game.start();
+      _advanceTo(game, 1);
+      game.tapLane(1);
+      await game.ready();
+
+      final labels = game.children.whereType<FloatingLabel>();
+      expect(labels.single.text, RhythmLabels.tr.perfect);
     },
   );
 

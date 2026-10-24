@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame_gallery_core/src/game/game_overlays.dart';
 import 'package:flame_gallery_core/src/game/game_phase.dart';
@@ -120,6 +121,9 @@ abstract base class GalleryFlameGame extends FlameGame {
     _score.dispose();
     _phase.dispose();
     super.onRemove();
+    // Flame only clears caches in dispose(), which GameWidget never calls.
+    // Games own a private Images cache, so free its decoded images here.
+    if (!identical(images, Flame.images)) images.clearCache();
   }
 
   GameResult? _end(GameEndReason reason, {required bool showGameOver}) {

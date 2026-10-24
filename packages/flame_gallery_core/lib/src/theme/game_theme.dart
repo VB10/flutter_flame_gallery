@@ -18,13 +18,15 @@ final class GameTheme {
   ThemeData toThemeData(BuildContext context) =>
       ThemeData(colorScheme: resolveColors(context), fontFamily: fontFamily);
 
+  /// Nullable fields take a [ValueGetter] so they can also be cleared:
+  /// `copyWith(logo: () => null)` removes the logo, omitting it keeps it.
   GameTheme copyWith({
-    ColorScheme? colorScheme,
-    String? fontFamily,
-    ImageProvider? logo,
+    ValueGetter<ColorScheme?>? colorScheme,
+    ValueGetter<String?>? fontFamily,
+    ValueGetter<ImageProvider?>? logo,
   }) => GameTheme(
-    colorScheme: colorScheme ?? this.colorScheme,
-    fontFamily: fontFamily ?? this.fontFamily,
-    logo: logo ?? this.logo,
+    colorScheme: colorScheme == null ? this.colorScheme : colorScheme(),
+    fontFamily: fontFamily == null ? this.fontFamily : fontFamily(),
+    logo: logo == null ? this.logo : logo(),
   );
 }

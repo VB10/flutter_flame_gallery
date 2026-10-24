@@ -20,4 +20,4 @@ Future<void> playCampaign(BuildContext context) async {
 ```
 
 A full demo app with every game lives in
-[apps/example](https://github.com/VB10/flame_gallery/tree/main/apps/example).
+[apps/example](https://github.com/VB10/flutter_flame_gallery/tree/main/apps/example).

@@ -30,4 +30,22 @@ final class RunnerConfig {
 
   /// Optional full screen background image, stretched to cover.
   final GameAsset? background;
+
+  /// Nullable fields take a [ValueGetter] so they can also be cleared:
+  /// `copyWith(timeLimit: () => null)` makes the run endless.
+  RunnerConfig copyWith({
+    ValueGetter<Duration?>? timeLimit,
+    int? lives,
+    int? coinValue,
+    RunnerDifficulty? difficulty,
+    RunnerSprites? sprites,
+    ValueGetter<GameAsset?>? background,
+  }) => RunnerConfig(
+    timeLimit: timeLimit == null ? this.timeLimit : timeLimit(),
+    lives: lives ?? this.lives,
+    coinValue: coinValue ?? this.coinValue,
+    difficulty: difficulty ?? this.difficulty,
+    sprites: sprites ?? this.sprites,
+    background: background == null ? this.background : background(),
+  );
 }

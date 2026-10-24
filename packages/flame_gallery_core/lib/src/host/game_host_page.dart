@@ -17,6 +17,9 @@ import 'package:flutter/services.dart';
 ///
 /// [onClose] receives the last result (or `null` if the round never started).
 /// When omitted the page pops itself with that result.
+///
+/// One page is one session: a rebuild with another [game] keeps the running
+/// session. Give the page a new `key` to start over with a different game.
 final class GameHostPage extends StatefulWidget {
   const GameHostPage({
     required this.game,
@@ -57,12 +60,19 @@ final class _GameHostPageState extends State<GameHostPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_flameGame != null) return;
+    if (_flameGame == null) _createGame();
+  }
+
+  void _createGame() {
     final flameGame = widget.game.createGame(
       widget.game.theme.resolveColors(context),
     );
-    _subscription = flameGame.events.listen(widget.onEvent);
     _flameGame = flameGame;
+    // Reads widget.onEvent on every event, so a new callback from a rebuild is
+    // picked up without re-subscribing.
+    _subscription = flameGame.events.listen(
+      (event) => widget.onEvent?.call(event),
+    );
   }
 
   @override

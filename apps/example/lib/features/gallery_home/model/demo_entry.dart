@@ -129,6 +129,7 @@ final class DemoEntry {
       game: NoteRush(
         audio: AssetRhythmAudio(demoSong),
         strings: NoteRush.stringsTr,
+        labels: RhythmLabels.tr,
         config: const RhythmConfig(
           difficulty: RhythmDifficulty.hard,
           missLimit: 10,

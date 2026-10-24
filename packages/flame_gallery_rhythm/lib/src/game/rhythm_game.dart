@@ -7,8 +7,8 @@ import 'package:flame_gallery_core/flame_gallery_core.dart';
 import 'package:flame_gallery_rhythm/src/audio/rhythm_audio.dart';
 import 'package:flame_gallery_rhythm/src/component/lane_board.dart';
 import 'package:flame_gallery_rhythm/src/component/note_component.dart';
-import 'package:flame_gallery_rhythm/src/component/rhythm_effects.dart';
 import 'package:flame_gallery_rhythm/src/config/rhythm_config.dart';
+import 'package:flame_gallery_rhythm/src/config/rhythm_labels.dart';
 import 'package:flame_gallery_rhythm/src/game/rhythm_layout.dart';
 import 'package:flame_gallery_rhythm/src/logic/note_chart.dart';
 import 'package:flame_gallery_rhythm/src/logic/rhythm_judge.dart';
@@ -24,6 +24,7 @@ final class RhythmGame extends GalleryFlameGame {
     required this.colors,
     required super.gameId,
     this.audio,
+    this.labels = RhythmLabels.en,
   }) : assert(
          config.song.notes.every((n) => n.lane >= 0 && n.lane < config.lanes),
          'Every note lane must be below RhythmConfig.lanes',
@@ -44,6 +45,17 @@ final class RhythmGame extends GalleryFlameGame {
 
   /// Optional music. Its position, when known, drives the song clock.
   final RhythmAudio? audio;
+  final RhythmLabels labels;
+
+  /// How long the clock waits for the player's first position report before
+  /// running on its own, so notes do not jump when the music kicks in.
+  static const _audioStartTimeout = 1.0;
+  static const _labelFontSize = 22.0;
+  static const _labelRise = 48.0;
+  static const _labelDuration = 0.5;
+  static const _burstLifespan = 0.35;
+  static const _burstSpeed = 220.0;
+  static const _burstMaxRadius = 4.5;
 
   final NoteChart _chart;
   final RhythmScore _score = RhythmScore();
@@ -57,6 +69,9 @@ final class RhythmGame extends GalleryFlameGame {
   late RhythmLayout _layout = RhythmLayout(size: size, lanes: config.lanes);
   late final LaneBoard _board;
   double _clock = 0;
+  double _audioWait = 0;
+  bool _musicReported = false;
+  late final Map<Judgement, TextPaint> _labelPaints;
   int _nextSpawn = 0;
   late GamePhase _lastPhase;
   bool _audioActive = false;
@@ -65,15 +80,17 @@ final class RhythmGame extends GalleryFlameGame {
   ValueListenable<int> get combo => _combo;
   ValueListenable<int> get accuracy => _accuracy;
   ValueListenable<int?> get missesLeft => _missesLeft;
+  @internal
   RhythmLayout get layout => _layout;
 
-  /// Seconds into the song: the audio position when the player reports one,
-  /// otherwise the game's own clock.
+  /// Seconds into the song as the player hears it: the audio position minus
+  /// [RhythmConfig.audioLatency] when the player reports one, otherwise the
+  /// game's own clock.
   double get songTime {
     final position = audio?.position;
     return position == null
         ? _clock
-        : position.inMicroseconds / Duration.microsecondsPerSecond;
+        : _seconds(position) - _seconds(config.audioLatency);
   }
 
   @visibleForTesting
@@ -98,6 +115,16 @@ final class RhythmGame extends GalleryFlameGame {
       flash: colors.primary,
     );
     await add(_board);
+    _labelPaints = {
+      for (final judgement in Judgement.values)
+        judgement: TextPaint(
+          style: TextStyle(
+            color: judgement.isHit ? colors.primary : colors.error,
+            fontSize: _labelFontSize,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+    };
     await super.onLoad();
   }
 
@@ -113,6 +140,8 @@ final class RhythmGame extends GalleryFlameGame {
     _chart.reset();
     _score.reset();
     _clock = 0;
+    _audioWait = 0;
+    _musicReported = false;
     _nextSpawn = 0;
     _endCause = null;
     _combo.value = 0;
@@ -124,7 +153,7 @@ final class RhythmGame extends GalleryFlameGame {
   void update(double dt) {
     super.update(dt);
     if (!isPlaying) return;
-    _clock += dt;
+    _advanceClock(dt);
     final now = songTime;
     _spawnUpTo(now);
     for (final index in _chart.expire(now)) {
@@ -146,6 +175,7 @@ final class RhythmGame extends GalleryFlameGame {
   };
 
   /// A tap in [lane]: judged against the closest open note of that lane.
+  @internal
   void tapLane(int lane) {
     if (!isPlaying) return;
     _board.flashLane(lane);
@@ -160,16 +190,15 @@ final class RhythmGame extends GalleryFlameGame {
     final at = Vector2(_layout.laneCenterX(lane), _layout.hitY);
     note?.removeFromParent();
     addAll([
-      HitBurst.at(
+      GalleryBurst.at(
         position: at,
         color: _laneColor(lane),
         random: _effectsRandom,
+        lifespan: _burstLifespan,
+        speed: _burstSpeed,
+        maxRadius: _burstMaxRadius,
       ),
-      JudgementText(
-        text: hit.judgement.label,
-        position: at,
-        color: colors.primary,
-      ),
+      _label(hit.judgement, at),
     ]);
   }
 
@@ -200,10 +229,9 @@ final class RhythmGame extends GalleryFlameGame {
         .firstOrNull
         ?.markMissed();
     add(
-      JudgementText(
-        text: Judgement.miss.label,
-        position: Vector2(_layout.laneCenterX(note.lane), _layout.hitY),
-        color: colors.error,
+      _label(
+        Judgement.miss,
+        Vector2(_layout.laneCenterX(note.lane), _layout.hitY),
       ),
     );
     final limit = config.missLimit;
@@ -212,6 +240,37 @@ final class RhythmGame extends GalleryFlameGame {
     _missesLeft.value = left;
     if (left == 0) _end(RhythmEndCause.tooManyMisses);
   }
+
+  /// Follows the music whenever it reports a position, so the clock never
+  /// drifts from it; runs on its own only without audio or when the player
+  /// stops reporting. At start it waits briefly for the first report.
+  void _advanceClock(double dt) {
+    final audio = this.audio;
+    final position = audio?.position;
+    if (position != null) {
+      _musicReported = true;
+      _clock = _seconds(position) - _seconds(config.audioLatency);
+    } else if (audio != null &&
+        !_musicReported &&
+        _audioWait < _audioStartTimeout) {
+      _audioWait += dt;
+    } else {
+      _clock += dt;
+    }
+  }
+
+  FloatingLabel _label(Judgement judgement, Vector2 at) => FloatingLabel(
+    text: switch (judgement) {
+      Judgement.perfect => labels.perfect,
+      Judgement.great => labels.great,
+      Judgement.good => labels.good,
+      Judgement.miss => labels.miss,
+    },
+    position: at,
+    paint: _labelPaints[judgement]!,
+    rise: _labelRise,
+    duration: _labelDuration,
+  );
 
   void _syncStats() {
     _combo.value = _score.combo;

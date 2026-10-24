@@ -36,10 +36,10 @@ jobs:
           cache: true
       - run: flutter pub get
 
-      # Pages serves from /flame_gallery/, the demo lives one level deeper.
+      # Pages serves from /flutter_flame_gallery/, the demo lives one level deeper.
       - name: Build web demo
         working-directory: apps/example
-        run: flutter build web --release --base-href /flame_gallery/play/
+        run: flutter build web --release --base-href /flutter_flame_gallery/play/
 
       - name: Assemble site
         run: |

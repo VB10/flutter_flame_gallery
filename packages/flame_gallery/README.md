@@ -1,8 +1,8 @@
 # Flame Gallery
 
 [![pub package](https://img.shields.io/pub/v/flame_gallery.svg)](https://pub.dev/packages/flame_gallery)
-[![CI](https://github.com/VB10/flame_gallery/actions/workflows/ci.yml/badge.svg)](https://github.com/VB10/flame_gallery/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/VB10/flame_gallery/blob/main/LICENSE)
+[![CI](https://github.com/VB10/flutter_flame_gallery/actions/workflows/ci.yml/badge.svg)](https://github.com/VB10/flutter_flame_gallery/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/VB10/flutter_flame_gallery/blob/main/LICENSE)
 
 Drop-in, brandable 2D mini games for any Flutter app, built on [Flame](https://flame-engine.org).
 One call opens a full screen game; you get the score back.
@@ -11,11 +11,11 @@ One call opens a full screen game; you get the score back.
 final result = await FlameGallery.show(context, game: const FruitSlice());
 ```
 
-**[Play it in your browser](https://vb10.github.io/flame_gallery/play/)** · [Website](https://vb10.github.io/flame_gallery/) · [GitHub](https://github.com/VB10/flame_gallery)
+**[Play it in your browser](https://vb10.github.io/flutter_flame_gallery/play/)** · [Website](https://vb10.github.io/flutter_flame_gallery/) · [GitHub](https://github.com/VB10/flutter_flame_gallery)
 
 | Fruit Slice | Ruins Runner | Sweet Swap | Note Rush |
 |:---:|:---:|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/VB10/flame_gallery/main/packages/flame_gallery/screenshots/fruit_slice.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flame_gallery/main/packages/flame_gallery/screenshots/runner.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flame_gallery/main/packages/flame_gallery/screenshots/sweet_swap.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flame_gallery/main/packages/flame_gallery/screenshots/note_rush.png" width="180"> |
+| <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/fruit_slice.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/runner.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/sweet_swap.png" width="180"> | <img src="https://raw.githubusercontent.com/VB10/flutter_flame_gallery/main/packages/flame_gallery/screenshots/note_rush.png" width="180"> |
 | Swipe to slice, avoid bombs | 3 lanes: swipe, jump, slide | Match three or more | Tap notes on the beat |
 
 ## Why
@@ -77,6 +77,13 @@ if (result case GameResult(isCompleted: true, :final score) when score >= 50) {
 
 Every game ships English and Turkish texts (`stringsEn`, `stringsTr`); override any of them with `copyWith`.
 
+Configs are immutable. `copyWith` takes a `ValueGetter` for nullable fields, so they can be cleared as well as changed:
+
+```dart
+const base = SliceConfig(lives: 3);
+final campaign = base.copyWith(timeLimit: () => const Duration(seconds: 30), bomb: () => null);
+```
+
 ### Results and events
 
 ```dart
@@ -112,7 +119,7 @@ Games run in immersive mode (system bars hidden) and restore `SystemUiMode.edgeT
 
 ## Testing
 
-Menu buttons and HUD values carry `Semantics(identifier:)` values from `GalleryKeys` (`gallery_start_button`, `gallery_pause_button`, `gallery_final_score`, `gallery_hud_score`, ...) and per game keys (`RunnerKeys`, `MatchKeys`, `RhythmKeys`). The repository has a Maestro suite that plays every game on iOS and Android: [apps/example/maestro](https://github.com/VB10/flame_gallery/tree/main/apps/example/maestro).
+Menu buttons and HUD values carry `Semantics(identifier:)` values from `GalleryKeys` (`gallery_start_button`, `gallery_pause_button`, `gallery_final_score`, `gallery_hud_score`, ...) and per game keys (`RunnerKeys`, `MatchKeys`, `RhythmKeys`). The repository has a Maestro suite that plays every game on iOS and Android: [apps/example/maestro](https://github.com/VB10/flutter_flame_gallery/tree/main/apps/example/maestro).
 
 ## Build your own game
 

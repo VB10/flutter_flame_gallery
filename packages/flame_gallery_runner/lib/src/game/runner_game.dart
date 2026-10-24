@@ -68,6 +68,7 @@ final class RunnerGame extends GalleryFlameGame {
   ValueListenable<int> get lives => _lives;
   ValueListenable<int?> get secondsLeft => _secondsLeft;
 
+  @internal
   RunnerLayout get layout => _layout;
 
   /// Pixels scrolled since the round started.
@@ -78,6 +79,7 @@ final class RunnerGame extends GalleryFlameGame {
   double get speed =>
       isPlaying ? RunnerRules.speedAt(_elapsed, config.difficulty) * size.y : 0;
 
+  @internal
   PlayerMotion get motion => _motion;
 
   @override
@@ -173,6 +175,7 @@ final class RunnerGame extends GalleryFlameGame {
     'endedBy': (_endCause ?? RunnerEndCause.quit).name,
   };
 
+  @internal
   void onSwipe(SwipeDirection direction) {
     if (!isPlaying) return;
     switch (direction) {
@@ -188,6 +191,7 @@ final class RunnerGame extends GalleryFlameGame {
   }
 
   /// Adds [row] at [y] (default: just above the top edge).
+  @internal
   void spawnRow(RunnerRow row, {double? y}) {
     final rowY = y ?? -_layout.laneWidth;
     for (var lane = 0; lane < row.obstacles.length; lane++) {
@@ -226,7 +230,7 @@ final class RunnerGame extends GalleryFlameGame {
     final lane = _player.occupiedLane;
     final reach = _layout.playerSize * _hitBoxFactor / 2;
 
-    for (final obstacle in children.whereType<ObstacleComponent>().toList()) {
+    for (final obstacle in children.whereType<ObstacleComponent>()) {
       if (obstacle.resolved) continue;
       final dy = obstacle.y - _player.y;
       if (dy - obstacle.size.y / 2 > reach) {
@@ -242,7 +246,7 @@ final class RunnerGame extends GalleryFlameGame {
       if (!isPlaying) return;
     }
 
-    for (final coin in children.whereType<CoinComponent>().toList()) {
+    for (final coin in children.whereType<CoinComponent>()) {
       final overlaps = (coin.y - _player.y).abs() <= coin.size.y / 2 + reach;
       if (coin.lane != lane || !overlaps || coin.isRemoving) continue;
       coin.removeFromParent();

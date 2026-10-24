@@ -5,7 +5,6 @@ import 'package:flame/components.dart';
 import 'package:flame_gallery_core/flame_gallery_core.dart';
 import 'package:flame_gallery_slice/src/component/blade_trail.dart';
 import 'package:flame_gallery_slice/src/component/item_spawner.dart';
-import 'package:flame_gallery_slice/src/component/slice_effects.dart';
 import 'package:flame_gallery_slice/src/component/slice_item_component.dart';
 import 'package:flame_gallery_slice/src/component/sliced_half_component.dart';
 import 'package:flame_gallery_slice/src/component/swipe_input.dart';
@@ -37,6 +36,17 @@ final class SliceGame extends GalleryFlameGame {
   static const _itemSizeFactor = 0.17;
   static const _halfPush = 160.0;
   static const _maxSpin = 4.0;
+  static const _burstLifespan = 0.6;
+  static const _burstGravityFactor = 2.4;
+  static const _juiceCount = 14;
+  static const _juiceSpeed = 260.0;
+  static const _juiceMaxRadius = 6.0;
+  static const _bombCount = 40;
+  static const _bombSpeed = 420.0;
+  static const _bombMaxRadius = 9.0;
+  static const _comboFontSize = 34.0;
+  static const _comboRise = 70.0;
+  static const _comboDuration = 0.7;
 
   final SliceConfig config;
   final ColorScheme colors;
@@ -51,6 +61,7 @@ final class SliceGame extends GalleryFlameGame {
   late final LaunchPlanner _planner = LaunchPlanner(random: _random);
   late final ItemSpawner _spawner;
   late final BladeTrail _trail;
+  late final TextPaint _comboPaint;
   final Map<SliceItem, Sprite> _sprites = {};
   Sprite? _bombSprite;
   double _timeLeft = 0;
@@ -73,6 +84,13 @@ final class SliceGame extends GalleryFlameGame {
     }
 
     _spawner = ItemSpawner(difficulty: config.difficulty, random: _random);
+    _comboPaint = TextPaint(
+      style: TextStyle(
+        color: colors.primary,
+        fontSize: _comboFontSize,
+        fontWeight: FontWeight.w800,
+      ),
+    );
     _trail = BladeTrail(
       color: colors.onSurface,
       glow: colors.primary.withValues(alpha: 0.7),
@@ -113,6 +131,7 @@ final class SliceGame extends GalleryFlameGame {
     'endedBy': (_endCause ?? SliceEndCause.quit).name,
   };
 
+  @internal
   void spawnWave(int count) {
     final bombSprite = _bombSprite;
     final bombIndex =
@@ -129,11 +148,13 @@ final class SliceGame extends GalleryFlameGame {
     }
   }
 
+  @internal
   void beginStroke(Vector2 point) {
     _lastSwipePoint = point.clone();
     _trail.addPoint(point, startsStroke: true);
   }
 
+  @internal
   void swipe(Vector2 from, Vector2 to) {
     _lastSwipePoint = to.clone();
     _trail.addPoint(to);
@@ -153,14 +174,24 @@ final class SliceGame extends GalleryFlameGame {
     }
   }
 
+  @internal
   void endStroke() {
     final bonus = _rules.endStroke();
     final at = _lastSwipePoint;
     if (bonus == 0 || at == null || !isPlaying) return;
     addScore(bonus);
-    add(ComboText(text: '×$bonus', position: at, color: colors.primary));
+    add(
+      FloatingLabel(
+        text: '×$bonus',
+        position: at,
+        paint: _comboPaint,
+        rise: _comboRise,
+        duration: _comboDuration,
+      ),
+    );
   }
 
+  @internal
   void onItemMissed() {
     if (!isPlaying) return;
     final outOfLives = _rules.registerMiss();
@@ -201,13 +232,12 @@ final class SliceGame extends GalleryFlameGame {
     final item = target.item;
     if (item == null) {
       add(
-        burst(
-          position: target.position,
-          color: colors.error,
-          random: _random,
-          count: 40,
-          speed: 420,
-          maxRadius: 9,
+        _burst(
+          target.position,
+          colors.error,
+          count: _bombCount,
+          speed: _bombSpeed,
+          maxRadius: _bombMaxRadius,
         ),
       );
       _end(SliceEndCause.bomb);
@@ -216,9 +246,32 @@ final class SliceGame extends GalleryFlameGame {
     addScore(_rules.registerSlice(item.points));
     addAll([
       ..._halvesOf(target, direction),
-      burst(position: target.position, color: item.juiceColor, random: _random),
+      _burst(
+        target.position,
+        item.juiceColor,
+        count: _juiceCount,
+        speed: _juiceSpeed,
+        maxRadius: _juiceMaxRadius,
+      ),
     ]);
   }
+
+  ParticleSystemComponent _burst(
+    Vector2 at,
+    Color color, {
+    required int count,
+    required double speed,
+    required double maxRadius,
+  }) => GalleryBurst.at(
+    position: at,
+    color: color,
+    random: _random,
+    count: count,
+    lifespan: _burstLifespan,
+    speed: speed,
+    maxRadius: maxRadius,
+    gravity: speed * _burstGravityFactor,
+  );
 
   /// Splits the sprite into left/right halves along the swipe direction.
   List<SlicedHalfComponent> _halvesOf(

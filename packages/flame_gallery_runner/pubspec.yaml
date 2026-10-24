@@ -1,8 +1,8 @@
 name: flame_gallery_runner
 description: "Ruins Runner: a three-lane endless runner Flame mini game for Flame Gallery with lane swipes, jumps, slides, coins and brandable art."
 version: 0.1.0
-repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery_runner
-issue_tracker: https://github.com/VB10/flame_gallery/issues
+repository: https://github.com/VB10/flutter_flame_gallery/tree/main/packages/flame_gallery_runner
+issue_tracker: https://github.com/VB10/flutter_flame_gallery/issues
 topics:
   - flame
   - game

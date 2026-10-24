@@ -1,12 +1,16 @@
+# Dart / Flutter
 .dart_tool/
 build/
-pubspec.lock
-!apps/example/pubspec.lock
-.idea/
-*.iml
-.DS_Store
 coverage/
+pubspec.lock
 
 # Maestro reports
 apps/example/maestro/build/
+
+# Local tooling and editors
+.vscode/
+.idea/
+*.iml
+.serena/
 __pycache__/
+.DS_Store

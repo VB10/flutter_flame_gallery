@@ -5,7 +5,6 @@ import 'package:flame/cache.dart';
 import 'package:flame/components.dart';
 import 'package:flame_gallery_core/flame_gallery_core.dart';
 import 'package:flame_gallery_match/src/component/board_component.dart';
-import 'package:flame_gallery_match/src/component/match_effects.dart';
 import 'package:flame_gallery_match/src/component/piece_component.dart';
 import 'package:flame_gallery_match/src/config/match_config.dart';
 import 'package:flame_gallery_match/src/logic/cascade_step.dart';
@@ -43,6 +42,7 @@ final class MatchGame extends GalleryFlameGame {
 
   /// Piece size relative to its cell.
   static const _pieceFactor = 0.86;
+  static const _burstSpeed = 180.0;
   static const _swapDuration = 0.16;
   static const _clearDuration = 0.16;
   static const _fallDuration = 0.24;
@@ -144,6 +144,7 @@ final class MatchGame extends GalleryFlameGame {
 
   /// Swaps two neighbouring pieces. A swap that makes no match bounces back
   /// and does not cost a move.
+  @internal
   void requestSwap(Cell a, Cell b) {
     if (!canInteract || !_board.canSwap(a, b)) return;
     _busy = true;
@@ -259,10 +260,11 @@ final class MatchGame extends GalleryFlameGame {
       if (piece == null) continue;
       piece.vanish(_clearDuration);
       _boardView.add(
-        pieceBurst(
+        GalleryBurst.at(
           position: piece.position,
           color: config.pieces[piece.piece].color,
           random: _effectsRandom,
+          speed: _burstSpeed,
         ),
       );
       _pieces[cell.row][cell.column] = null;

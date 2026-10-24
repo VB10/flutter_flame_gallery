@@ -1,8 +1,8 @@
 name: flame_gallery
 description: "Drop-in, brandable 2D mini games (slice, endless runner, match-3, rhythm) for any Flutter app, opened with one FlameGallery.show call."
 version: 0.1.0
-repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery
-issue_tracker: https://github.com/VB10/flame_gallery/issues
+repository: https://github.com/VB10/flutter_flame_gallery/tree/main/packages/flame_gallery
+issue_tracker: https://github.com/VB10/flutter_flame_gallery/issues
 topics:
   - flame
   - game

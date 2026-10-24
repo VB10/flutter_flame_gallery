@@ -41,21 +41,23 @@ final class SliceConfig {
   /// Optional full screen background image, stretched to cover.
   final GameAsset? background;
 
+  /// Nullable fields take a [ValueGetter] so they can also be cleared:
+  /// `copyWith(bomb: () => null)` removes bombs, omitting it keeps them.
   SliceConfig copyWith({
-    Duration? timeLimit,
-    int? lives,
+    ValueGetter<Duration?>? timeLimit,
+    ValueGetter<int?>? lives,
     List<SliceItem>? items,
-    GameAsset? bomb,
+    ValueGetter<GameAsset?>? bomb,
     double? bombChance,
     SliceDifficulty? difficulty,
-    GameAsset? background,
+    ValueGetter<GameAsset?>? background,
   }) => SliceConfig(
-    timeLimit: timeLimit ?? this.timeLimit,
-    lives: lives ?? this.lives,
+    timeLimit: timeLimit == null ? this.timeLimit : timeLimit(),
+    lives: lives == null ? this.lives : lives(),
     items: items ?? this.items,
-    bomb: bomb ?? this.bomb,
+    bomb: bomb == null ? this.bomb : bomb(),
     bombChance: bombChance ?? this.bombChance,
     difficulty: difficulty ?? this.difficulty,
-    background: background ?? this.background,
+    background: background == null ? this.background : background(),
   );
 }

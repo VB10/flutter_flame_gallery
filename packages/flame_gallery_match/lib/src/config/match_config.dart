@@ -59,25 +59,27 @@ final class MatchConfig {
   /// player gets the same puzzle. `null` → a new board each round.
   final int? seed;
 
+  /// Nullable fields take a [ValueGetter] so they can also be cleared:
+  /// `copyWith(targetScore: () => null)` removes the target.
   MatchConfig copyWith({
     int? rows,
     int? columns,
     List<MatchPiece>? pieces,
-    int? moveLimit,
-    Duration? timeLimit,
-    int? targetScore,
+    ValueGetter<int?>? moveLimit,
+    ValueGetter<Duration?>? timeLimit,
+    ValueGetter<int?>? targetScore,
     int? pointsPerPiece,
-    GameAsset? background,
-    int? seed,
+    ValueGetter<GameAsset?>? background,
+    ValueGetter<int?>? seed,
   }) => MatchConfig(
     rows: rows ?? this.rows,
     columns: columns ?? this.columns,
     pieces: pieces ?? this.pieces,
-    moveLimit: moveLimit ?? this.moveLimit,
-    timeLimit: timeLimit ?? this.timeLimit,
-    targetScore: targetScore ?? this.targetScore,
+    moveLimit: moveLimit == null ? this.moveLimit : moveLimit(),
+    timeLimit: timeLimit == null ? this.timeLimit : timeLimit(),
+    targetScore: targetScore == null ? this.targetScore : targetScore(),
     pointsPerPiece: pointsPerPiece ?? this.pointsPerPiece,
-    background: background ?? this.background,
-    seed: seed ?? this.seed,
+    background: background == null ? this.background : background(),
+    seed: seed == null ? this.seed : seed(),
   );
 }

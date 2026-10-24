@@ -1,14 +1,13 @@
 /// Timing grade of a tap, with its base points.
 enum Judgement {
-  perfect(points: 300, label: 'Perfect'),
-  great(points: 200, label: 'Great'),
-  good(points: 100, label: 'Good'),
-  miss(points: 0, label: 'Miss');
+  perfect(points: 300),
+  great(points: 200),
+  good(points: 100),
+  miss(points: 0);
 
-  Judgement({required this.points, required this.label});
+  Judgement({required this.points});
 
   final int points;
-  final String label;
 
   bool get isHit => this != miss;
 }

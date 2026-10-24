@@ -36,7 +36,7 @@ Creates `packages/flame_gallery_<name>` following the same shape as `packages/fl
 
    Default strings: `static const stringsEn = GameStrings.en(...)` and `stringsTr = GameStrings.tr(...)`.
 
-3. **Sprites**: generate IP-clean placeholders with Pillow in the scratchpad (venv, `python -I`), 256×256 transparent PNG, like `flame_gallery_slice/assets/images`. Never download art.
+3. **Sprites**: generate IP-clean placeholders with Pillow (a throwaway venv outside the repo), 256×256 transparent PNG, like `flame_gallery_slice/assets/images`. Never download art.
 
 4. **Wire it up**
    - Root `pubspec.yaml` → add `packages/flame_gallery_<name>` under `workspace:`.
