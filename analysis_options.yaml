@@ -1,0 +1,30 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  exclude:
+    - "**/*.g.dart"
+    - "**/build/**"
+    - "**/android/**"
+    - "**/ios/**"
+  errors:
+    dead_code: error
+
+linter:
+  rules:
+    public_member_api_docs: false
+    unnecessary_type_name_in_constructor: false
+    # Flame's Component.add returns FutureOr; calling it from sync game code is
+    # the engine idiom and cannot be wrapped in unawaited().
+    discarded_futures: false
+    lines_longer_than_80_chars: false
+    sort_pub_dependencies: false
+    one_member_abstracts: false
+    flutter_style_todos: false
+    prefer_single_quotes: true
+    prefer_final_locals: true
+    prefer_const_constructors: true
+    use_super_parameters: true
+    avoid_print: true

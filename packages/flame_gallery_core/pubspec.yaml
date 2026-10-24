@@ -1,0 +1,27 @@
+name: flame_gallery_core
+description: "Core contracts, host page, themed overlays and HUD widgets shared by Flame Gallery mini games. Build your own drop-in Flame game on top of it."
+version: 0.1.0
+repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery_core
+issue_tracker: https://github.com/VB10/flame_gallery/issues
+topics:
+  - flame
+  - game
+  - gamification
+  - minigame
+  - widget
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.38.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flame_test: ^2.3.1
+  very_good_analysis: ^11.0.0

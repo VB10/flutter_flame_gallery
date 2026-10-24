@@ -1,0 +1,38 @@
+name: flame_gallery_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/flame_gallery_core
+  - packages/flame_gallery_slice
+  - packages/flame_gallery_runner
+  - packages/flame_gallery_match
+  - packages/flame_gallery_rhythm
+  - packages/flame_gallery
+  - apps/example
+
+dev_dependencies:
+  melos: ^8.2.2
+
+melos:
+  scripts:
+    analyze:
+      description: Run flutter analyze across all packages.
+      run: melos exec -c 1 --fail-fast -- "flutter analyze ."
+    format:
+      description: Format all Dart files in every package.
+      run: melos exec -c 1 -- "dart format ."
+    format:check:
+      description: Verify Dart formatting without writing changes.
+      run: melos exec -c 1 -- "dart format --set-exit-if-changed ."
+    test:
+      description: Run tests for packages that have a test directory.
+      run: melos exec -c 1 --dir-exists=test --fail-fast -- "flutter test"
+    e2e:ios:
+      description: Maestro smoke suite on the booted iOS simulator (install the app first).
+      run: PLATFORM=ios ./apps/example/maestro/run_maestro_test.sh
+    e2e:android:
+      description: Maestro smoke suite on the running Android emulator (install the app first).
+      run: PLATFORM=android ./apps/example/maestro/run_maestro_test.sh

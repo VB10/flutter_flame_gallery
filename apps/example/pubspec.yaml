@@ -1,0 +1,25 @@
+name: flame_gallery_example
+description: Example host app for Flame Gallery.
+publish_to: none
+version: 0.1.0+1
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame_gallery:
+    path: ../../packages/flame_gallery
+  flame_audio: ^2.12.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/audio/

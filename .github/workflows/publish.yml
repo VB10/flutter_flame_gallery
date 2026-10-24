@@ -1,0 +1,127 @@
+name: Publish to pub.dev
+
+# Each package has its own tag, because pub.dev checks that the tag matches
+# the package version (tag pattern per package in pub.dev admin ->
+# Automated publishing):
+#   flame_gallery_core   -> flame_gallery_core-v{{version}}
+#   flame_gallery_slice  -> flame_gallery_slice-v{{version}}   (same for runner,
+#   match, rhythm)
+#   flame_gallery        -> flame_gallery-v{{version}}
+# Order: core first, then games, then the facade. The very first version of
+# every package must be published by hand; pub.dev only allows automated
+# publishing for packages that already exist.
+on:
+  push:
+    tags:
+      - "flame_gallery_core-v[0-9]+.[0-9]+.[0-9]+*"
+      - "flame_gallery_slice-v[0-9]+.[0-9]+.[0-9]+*"
+      - "flame_gallery_runner-v[0-9]+.[0-9]+.[0-9]+*"
+      - "flame_gallery_match-v[0-9]+.[0-9]+.[0-9]+*"
+      - "flame_gallery_rhythm-v[0-9]+.[0-9]+.[0-9]+*"
+      - "flame_gallery-v[0-9]+.[0-9]+.[0-9]+*"
+
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package to publish to pub.dev"
+        required: true
+        type: choice
+        default: "all"
+        options:
+          - "all"
+          - "flame_gallery_core"
+          - "flame_gallery_slice"
+          - "flame_gallery_runner"
+          - "flame_gallery_match"
+          - "flame_gallery_rhythm"
+          - "flame_gallery"
+
+jobs:
+  core:
+    if: |
+      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_core')) ||
+      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_core-v'))
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/_publish_package.yml
+    with:
+      package: flame_gallery_core
+
+  slice:
+    needs: [core]
+    if: |
+      always() &&
+      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
+      (
+      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_slice')) ||
+      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_slice-v'))
+      )
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/_publish_package.yml
+    with:
+      package: flame_gallery_slice
+
+  runner:
+    needs: [core]
+    if: |
+      always() &&
+      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
+      (
+      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_runner')) ||
+      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_runner-v'))
+      )
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/_publish_package.yml
+    with:
+      package: flame_gallery_runner
+
+  match:
+    needs: [core]
+    if: |
+      always() &&
+      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
+      (
+      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_match')) ||
+      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_match-v'))
+      )
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/_publish_package.yml
+    with:
+      package: flame_gallery_match
+
+  rhythm:
+    needs: [core]
+    if: |
+      always() &&
+      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
+      (
+      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_rhythm')) ||
+      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_rhythm-v'))
+      )
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/_publish_package.yml
+    with:
+      package: flame_gallery_rhythm
+
+  facade:
+    needs: [core, slice, runner, match, rhythm]
+    if: |
+      always() &&
+      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
+      (needs.slice.result == 'success' || needs.slice.result == 'skipped') &&
+      (needs.runner.result == 'success' || needs.runner.result == 'skipped') &&
+      (needs.match.result == 'success' || needs.match.result == 'skipped') &&
+      (needs.rhythm.result == 'success' || needs.rhythm.result == 'skipped') &&
+      (
+      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery')) ||
+      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery-v'))
+      )
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/_publish_package.yml
+    with:
+      package: flame_gallery

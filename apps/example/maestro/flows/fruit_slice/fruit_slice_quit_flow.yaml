@@ -1,0 +1,36 @@
+# Quitting from the pause menu returns a `quit` result, no game over panel.
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ../../core/keys.js
+  - runScript: ../../core/flows_core.js
+  - runScript: ./fruit_slice_setup.js
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.CARD_FRUIT_SLICE}
+    timeout: ${output.config.longTimeout}
+- tapOn:
+    id: ${output.keys.CARD_FRUIT_SLICE}
+- tapOn:
+    id: ${output.keys.START_BUTTON}
+- runFlow: ../../core/dismiss_system_hints.yaml
+- tapOn:
+    id: ${output.keys.PAUSE_BUTTON}
+- assertVisible:
+    id: ${output.keys.PAUSE_PANEL}
+- tapOn:
+    id: ${output.keys.CLOSE_BUTTON}
+- assertNotVisible:
+    id: ${output.keys.GAME_OVER_PANEL}
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.RESULT_CARD}
+    timeout: ${output.config.defaultTimeout}
+- assertVisible:
+    id: ${output.keys.RESULT_REASON}
+    text: ${output.values.REASON_QUIT}
+- assertVisible:
+    id: ${output.keys.RESULT_ENDED_BY}
+    text: ${output.slice.END_QUIT}

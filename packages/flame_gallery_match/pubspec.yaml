@@ -1,0 +1,32 @@
+name: flame_gallery_match
+description: "Sweet Swap: a match-three swap puzzle Flame mini game for Flame Gallery with cascades, move or time limits, target scores and seeded boards."
+version: 0.1.0
+repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery_match
+issue_tracker: https://github.com/VB10/flame_gallery/issues
+topics:
+  - flame
+  - game
+  - minigame
+  - gamification
+  - puzzle
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.38.2
+  flame_gallery_core: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flame_test: ^2.3.1
+  very_good_analysis: ^11.0.0
+
+flutter:
+  assets:
+    - assets/images/

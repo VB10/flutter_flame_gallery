@@ -1,0 +1,3 @@
+appId: ${APP_ID}
+---
+- runFlow: ../../flows/sweet_swap/sweet_swap_daily_flow.yaml

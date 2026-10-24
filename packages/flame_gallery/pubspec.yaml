@@ -1,0 +1,40 @@
+name: flame_gallery
+description: "Drop-in, brandable 2D mini games (slice, endless runner, match-3, rhythm) for any Flutter app, opened with one FlameGallery.show call."
+version: 0.1.0
+repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery
+issue_tracker: https://github.com/VB10/flame_gallery/issues
+topics:
+  - flame
+  - game
+  - minigame
+  - gamification
+  - widget
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame_gallery_core: ^0.1.0
+  flame_gallery_slice: ^0.1.0
+  flame_gallery_runner: ^0.1.0
+  flame_gallery_match: ^0.1.0
+  flame_gallery_rhythm: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+
+screenshots:
+  - description: "Fruit Slice: swipe to slice fruits and avoid bombs."
+    path: screenshots/fruit_slice.png
+  - description: "Ruins Runner: three-lane endless runner with jumps and slides."
+    path: screenshots/runner.png
+  - description: "Sweet Swap: match-three puzzle with cascades."
+    path: screenshots/sweet_swap.png
+  - description: "Note Rush: four-lane rhythm tap game."
+    path: screenshots/note_rush.png

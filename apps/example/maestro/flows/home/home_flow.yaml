@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ../../core/keys.js
+  - runScript: ../../core/flows_core.js
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.HOME_VIEW}
+    timeout: ${output.config.longTimeout}
+- assertVisible:
+    id: ${output.keys.CARD_FRUIT_SLICE}
+- assertVisible:
+    id: ${output.keys.CARD_FRUIT_SLICE_SURVIVAL}
+- assertVisible:
+    id: ${output.keys.CARD_FRUIT_SLICE_BRAND}
+- assertVisible:
+    id: ${output.keys.CARD_RUNNER}
+- assertVisible:
+    id: ${output.keys.CARD_RUNNER_TIMED}
+- assertVisible:
+    id: ${output.keys.CARD_SWEET_SWAP}
+- scrollUntilVisible:
+    element:
+      id: ${output.keys.CARD_SWEET_SWAP_DAILY}
+    direction: DOWN
+- assertVisible:
+    id: ${output.keys.CARD_SWEET_SWAP_TARGET}
+- scrollUntilVisible:
+    element:
+      id: ${output.keys.CARD_NOTE_RUSH_HARD}
+    direction: DOWN
+- assertVisible:
+    id: ${output.keys.CARD_NOTE_RUSH}
+- assertNotVisible:
+    id: ${output.keys.RESULT_CARD}

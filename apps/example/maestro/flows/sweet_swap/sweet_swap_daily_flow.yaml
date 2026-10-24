@@ -1,0 +1,71 @@
+# Seeded board: an invalid swap is free, a valid one cascades for an exact
+# score, and the result reaches the host app.
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ../../core/keys.js
+  - runScript: ../../core/flows_core.js
+  - runScript: ./sweet_swap_setup.js
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.HOME_VIEW}
+    timeout: ${output.config.longTimeout}
+- scrollUntilVisible:
+    element:
+      id: ${output.keys.CARD_SWEET_SWAP_DAILY}
+    direction: DOWN
+- tapOn:
+    id: ${output.keys.CARD_SWEET_SWAP_DAILY}
+- tapOn:
+    id: ${output.keys.START_BUTTON}
+- runFlow: ../../core/dismiss_system_hints.yaml
+- assertVisible:
+    id: ${output.keys.HUD_MATCH_MOVES}
+    text: ${output.daily.MOVES_START}
+- assertVisible:
+    id: ${output.keys.HUD_SCORE}
+    text: ${output.daily.SCORE_START}
+
+- tapOn:
+    point: ${output.daily.INVALID_FROM}
+- tapOn:
+    point: ${output.daily.INVALID_TO}
+- waitForAnimationToEnd
+- assertVisible:
+    id: ${output.keys.HUD_MATCH_MOVES}
+    text: ${output.daily.MOVES_START}
+
+- tapOn:
+    point: ${output.daily.VALID_FROM}
+- tapOn:
+    point: ${output.daily.VALID_TO}
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.HUD_SCORE}
+      text: ${output.daily.SCORE_AFTER_SWAP}
+    timeout: ${output.config.defaultTimeout}
+- assertVisible:
+    id: ${output.keys.HUD_MATCH_MOVES}
+    text: ${output.daily.MOVES_AFTER_SWAP}
+
+- tapOn:
+    id: ${output.keys.PAUSE_BUTTON}
+- tapOn:
+    id: ${output.keys.CLOSE_BUTTON}
+# The result card sits at the top of the list; we scrolled down to the demo.
+- scrollUntilVisible:
+    element:
+      id: ${output.keys.RESULT_GAME}
+    direction: UP
+    visibilityPercentage: 100
+- assertVisible:
+    id: ${output.keys.RESULT_GAME}
+    text: ${output.values.GAME_SWEET_SWAP}
+- assertVisible:
+    id: ${output.keys.RESULT_SCORE}
+    text: ${output.daily.SCORE_AFTER_SWAP}
+- assertVisible:
+    id: ${output.keys.RESULT_ENDED_BY}
+    text: ${output.daily.END_QUIT}

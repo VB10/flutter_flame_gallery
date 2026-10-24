@@ -1,0 +1,71 @@
+# Full song: HUD on a frozen frame, a few lane taps, the song plays out and
+# the result reaches the host app.
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ../../core/keys.js
+  - runScript: ../../core/flows_core.js
+  - runScript: ./note_rush_setup.js
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.HOME_VIEW}
+    timeout: ${output.config.longTimeout}
+- scrollUntilVisible:
+    element:
+      id: ${output.keys.CARD_NOTE_RUSH}
+    direction: DOWN
+- tapOn:
+    id: ${output.keys.CARD_NOTE_RUSH}
+- tapOn:
+    id: ${output.keys.START_BUTTON}
+    waitToSettleTimeoutMs: 200 # games never settle
+# The song cannot end early (no miss limit), so pausing is safe on both
+# platforms even with slow lookups.
+- tapOn:
+    id: ${output.keys.PAUSE_BUTTON}
+    waitToSettleTimeoutMs: 200 # games never settle
+- runFlow: ../../core/dismiss_system_hints.yaml
+- assertVisible:
+    id: ${output.keys.PAUSE_PANEL}
+- assertVisible:
+    id: ${output.keys.HUD_SCORE}
+- assertVisible:
+    id: ${output.keys.HUD_RHYTHM_COMBO}
+- assertVisible:
+    id: ${output.keys.HUD_RHYTHM_ACCURACY}
+- tapOn:
+    id: ${output.keys.RESUME_BUTTON}
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          point: 25%, 85%
+          waitToSettleTimeoutMs: 200 # games never settle
+      - tapOn:
+          point: 62%, 85%
+          waitToSettleTimeoutMs: 200 # games never settle
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.GAME_OVER_PANEL}
+    timeout: ${output.config.roundTimeout}
+- assertVisible:
+    id: ${output.keys.FINAL_SCORE}
+- tapOn:
+    id: ${output.keys.CLOSE_BUTTON}
+# The result card sits at the top of the list; we scrolled down to the demo.
+- scrollUntilVisible:
+    element:
+      id: ${output.keys.RESULT_GAME}
+    direction: UP
+    visibilityPercentage: 100
+- assertVisible:
+    id: ${output.keys.RESULT_GAME}
+    text: ${output.values.GAME_NOTE_RUSH}
+- assertVisible:
+    id: ${output.keys.RESULT_REASON}
+    text: ${output.values.REASON_COMPLETED}
+- assertVisible:
+    id: ${output.keys.RESULT_ENDED_BY}
+    text: ${output.rhythm.END_SONG}

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flame Gallery</title>
+  <meta name="description" content="Drop-in, brandable 2D mini games for any Flutter app. One call: FlameGallery.show(context, game: FruitSlice()).">
+  <meta property="og:title" content="Flame Gallery — mini games for Flutter apps">
+  <meta property="og:description" content="Fruit Slice, Ruins Runner, Sweet Swap and Note Rush. Brand them, open them with one call, get the score back.">
+  <meta property="og:image" content="https://vb10.github.io/flame_gallery/images/og.png">
+  <link rel="icon" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <style>
+    :root {
+      --bg: #fbf8ff;
+      --surface: #ffffff;
+      --surface-2: #f1edf8;
+      --text: #1b1b21;
+      --muted: #5d5d6b;
+      --primary: #5b5bd6;
+      --primary-ink: #ffffff;
+      --accent: #ff7a45;
+      --border: #e3def0;
+      --code-bg: #1e1e2e;
+      --code-text: #e6e6f0;
+      --shadow: 0 18px 50px rgba(40, 30, 90, 0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #111118;
+        --surface: #1a1a24;
+        --surface-2: #22222f;
+        --text: #ecebf5;
+        --muted: #a5a4b8;
+        --primary: #a7a7ff;
+        --primary-ink: #14143a;
+        --accent: #ff9b6e;
+        --border: #2f2f40;
+        --code-bg: #0b0b12;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 Inter, system-ui, -apple-system, sans-serif;
+    }
+    a { color: var(--primary); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+    }
+    nav .brand { font-weight: 800; font-size: 20px; color: var(--text); text-decoration: none; }
+    nav .links a { margin-left: 20px; color: var(--muted); text-decoration: none; font-weight: 500; }
+    nav .links a:hover { color: var(--text); }
+    .hero { padding: 56px 0 40px; text-align: center; }
+    .eyebrow {
+      display: inline-block; padding: 6px 14px; border-radius: 999px;
+      background: var(--surface-2); color: var(--muted); font-size: 14px; font-weight: 500;
+    }
+    h1 {
+      font-size: clamp(36px, 6vw, 64px); line-height: 1.05; margin: 20px 0 16px;
+      letter-spacing: -0.03em; font-weight: 800;
+    }
+    h1 em { font-style: normal; color: var(--primary); }
+    .lead { font-size: 20px; color: var(--muted); max-width: 680px; margin: 0 auto 28px; }
+    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px;
+      border-radius: 14px; font-weight: 700; text-decoration: none;
+      border: 1px solid var(--border); color: var(--text); background: var(--surface);
+    }
+    .btn.primary { background: var(--primary); color: var(--primary-ink); border-color: transparent; }
+    .oneliner {
+      margin: 36px auto 0; max-width: 640px; text-align: left;
+      background: var(--code-bg); color: var(--code-text); border-radius: 16px;
+      padding: 18px 20px; font: 15px/1.5 "JetBrains Mono", monospace; overflow-x: auto;
+      white-space: pre;
+      box-shadow: var(--shadow);
+    }
+    .k { color: #c792ea; } .s { color: #c3e88d; } .t { color: #82aaff; } .c { color: #7f7f99; }
+    section { padding: 56px 0; }
+    h2 { font-size: clamp(26px, 4vw, 38px); letter-spacing: -0.02em; margin: 0 0 8px; }
+    .sub { color: var(--muted); margin: 0 0 32px; font-size: 18px; }
+    .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .game {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+      padding: 14px; box-shadow: var(--shadow);
+    }
+    .game img { width: 100%; aspect-ratio: 9 / 19.5; object-fit: cover; border-radius: 14px; display: block; background: var(--surface-2); }
+    .game h3 { margin: 14px 4px 2px; font-size: 18px; }
+    .game p { margin: 0 4px 6px; color: var(--muted); font-size: 14px; }
+    .game code { font-size: 13px; }
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 22px; }
+    .feature h3 { margin: 0 0 6px; font-size: 18px; }
+    .feature p { margin: 0; color: var(--muted); }
+    .icon { font-size: 26px; margin-bottom: 10px; }
+    .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    pre {
+      margin: 0; background: var(--code-bg); color: var(--code-text); border-radius: 16px;
+      padding: 18px 20px; font: 14px/1.55 "JetBrains Mono", monospace; overflow-x: auto;
+    }
+    .step-title { font-weight: 700; margin: 0 0 10px; }
+    .note { color: var(--muted); font-size: 15px; margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
+    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: var(--surface-2); font-size: 14px; }
+    td code { font-size: 13px; }
+    .table-wrap { overflow-x: auto; }
+    .play-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+      background: linear-gradient(120deg, var(--primary), var(--accent));
+      color: #fff; border-radius: 24px; padding: 32px;
+    }
+    .play-banner h2 { color: #fff; }
+    .play-banner p { margin: 0; opacity: .9; }
+    .play-banner .btn { background: #fff; color: #1b1b21; border: 0; }
+    footer { padding: 40px 0 60px; color: var(--muted); font-size: 14px; text-align: center; }
+    @media (max-width: 900px) {
+      .gallery { grid-template-columns: repeat(2, 1fr); }
+      .features { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      nav .links a:not(.keep) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#">🔥 Flame Gallery</a>
+      <div class="links">
+        <a href="#games">Games</a>
+        <a href="#usage">Usage</a>
+        <a href="#customize">Customize</a>
+        <a class="keep" href="https://pub.dev/packages/flame_gallery">pub.dev</a>
+        <a class="keep" href="https://github.com/VB10/flame_gallery">GitHub</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <span class="eyebrow">Flutter + Flame · MIT</span>
+      <h1>Mini games for <em>your</em> Flutter app.<br>One call away.</h1>
+      <p class="lead">Fruit Slice, an endless runner, a match-3 puzzle and a rhythm game, ready to drop into any app. Brand them with your colors, art and texts; get the score back for coupons, points or analytics.</p>
+      <div class="cta">
+        <a class="btn primary" href="play/">▶ Play in your browser</a>
+        <a class="btn" href="#usage">Get started</a>
+      </div>
+      <div class="oneliner"><span class="k">final</span> result = <span class="k">await</span> <span class="t">FlameGallery</span>.show(
+  context,
+  game: <span class="k">const</span> <span class="t">FruitSlice</span>(),
+);</div>
+    </header>
+
+    <section id="games">
+      <h2>The gallery</h2>
+      <p class="sub">Four classic 2D mechanics, each its own package, all sharing menus, pause handling and results.</p>
+      <div class="gallery">
+        <article class="game">
+          <img src="images/fruit_slice.png" alt="Fruit Slice gameplay" loading="lazy">
+          <h3>Fruit Slice</h3>
+          <p>Swipe to slice, chain combos, avoid bombs.</p>
+          <p><code>FruitSlice()</code></p>
+        </article>
+        <article class="game">
+          <img src="images/runner.png" alt="Ruins Runner gameplay" loading="lazy">
+          <h3>Ruins Runner</h3>
+          <p>Three lanes. Swipe, jump, slide, collect coins.</p>
+          <p><code>EndlessRunner()</code></p>
+        </article>
+        <article class="game">
+          <img src="images/sweet_swap.png" alt="Sweet Swap gameplay" loading="lazy">
+          <h3>Sweet Swap</h3>
+          <p>Match three or more, trigger cascades.</p>
+          <p><code>SweetSwap()</code></p>
+        </article>
+        <article class="game">
+          <img src="images/note_rush.png" alt="Note Rush gameplay" loading="lazy">
+          <h3>Note Rush</h3>
+          <p>Tap the lanes on the beat. Perfect, Great, Good.</p>
+          <p><code>NoteRush()</code></p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="features">
+        <div class="feature"><div class="icon">⚡</div><h3>One call</h3><p><code>FlameGallery.show</code> opens a full screen game with start, pause and game over menus and completes with a <code>GameResult</code>.</p></div>
+        <div class="feature"><div class="icon">🎨</div><h3>Your brand</h3><p>Color scheme, font, logo, every text, sprites and rules are config. No colors given? The game follows your app theme.</p></div>
+        <div class="feature"><div class="icon">🎯</div><h3>Campaign ready</h3><p>Timers, lives, move limits, target scores and seeded "daily" boards, plus stats in every result.</p></div>
+        <div class="feature"><div class="icon">🪶</div><h3>Light</h3><p>Library packages depend only on <code>flutter</code> and <code>flame</code>. No state management or codegen forced on your app.</p></div>
+        <div class="feature"><div class="icon">🧪</div><h3>Testable</h3><p>Stable <code>Semantics</code> ids on every button and HUD value. A Maestro suite plays every game on iOS and Android.</p></div>
+        <div class="feature"><div class="icon">🧩</div><h3>Extensible</h3><p>Build your own game on <code>flame_gallery_core</code>; menus, theming, pause and results come for free.</p></div>
+      </div>
+    </section>
+
+    <section id="usage">
+      <h2>Get started</h2>
+      <p class="sub">Add the package, call <code>show</code>, use the result.</p>
+      <div class="steps">
+        <div>
+          <p class="step-title">1 · Install</p>
+          <pre>flutter pub add flame_gallery</pre>
+          <p class="step-title" style="margin-top:24px">2 · Open a game</p>
+          <pre><span class="k">import</span> <span class="s">'package:flame_gallery/flame_gallery.dart'</span>;
+
+<span class="k">final</span> result = <span class="k">await</span> <span class="t">FlameGallery</span>.show(
+  context,
+  game: <span class="k">const</span> <span class="t">SweetSwap</span>(
+    config: <span class="t">MatchConfig</span>(moveLimit: <span class="t">15</span>, targetScore: <span class="t">1000</span>),
+  ),
+  onEvent: (event) =&gt; analytics.log(<span class="s">'$event'</span>),
+);</pre>
+        </div>
+        <div>
+          <p class="step-title">3 · Reward the player</p>
+          <pre><span class="k">if</span> (result <span class="k">case</span> <span class="t">GameResult</span>(
+  isCompleted: <span class="k">true</span>,
+  :<span class="k">final</span> score,
+) <span class="k">when</span> score &gt;= <span class="t">1000</span>) {
+  grantCoupon();
+}
+
+<span class="c">// result.toJson()</span>
+<span class="c">// {gameId: sweet_swap, score: 1040, reason: completed,</span>
+<span class="c">//  playTimeMs: 48210, stats: {movesUsed: 12, maxCascade: 3,</span>
+<span class="c">//  endedBy: target}}</span></pre>
+          <p class="note">Events: <code>GameStarted</code>, <code>GameScoreChanged</code>, <code>GamePaused</code>, <code>GameResumed</code>, <code>GameFinished</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="customize">
+      <h2>Make it yours</h2>
+      <p class="sub">Every game takes a theme, texts and its own rules. Swap the fruit for your products.</p>
+      <div class="steps">
+        <pre><span class="t">FruitSlice</span>(
+  theme: <span class="t">GameTheme</span>(
+    colorScheme: <span class="t">ColorScheme</span>.fromSeed(
+      seedColor: brandTeal,
+      brightness: <span class="t">Brightness</span>.dark,
+    ),
+    logo: <span class="k">const</span> <span class="t">AssetImage</span>(<span class="s">'assets/logo.png'</span>),
+  ),
+  strings: <span class="t">FruitSlice</span>.stringsTr.copyWith(
+    title: <span class="s">'Yaz Kampanyası'</span>,
+  ),
+  config: <span class="t">SliceConfig</span>(
+    timeLimit: <span class="k">const</span> <span class="t">Duration</span>(seconds: <span class="t">30</span>),
+    items: [
+      <span class="t">SliceItem</span>(
+        sprite: <span class="k">const</span> <span class="t">GameAsset</span>(<span class="s">'assets/can.png'</span>),
+        juiceColor: brandRed,
+        points: <span class="t">2</span>,
+      ),
+    ],
+    bomb: <span class="k">null</span>,
+  ),
+)</pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Game</th><th>Config highlights</th></tr></thead>
+            <tbody>
+              <tr><td><code>FruitSlice</code></td><td><code>timeLimit</code>, <code>lives</code>, <code>items</code>, <code>bomb</code>, <code>difficulty</code></td></tr>
+              <tr><td><code>EndlessRunner</code></td><td><code>timeLimit</code>, <code>lives</code>, <code>coinValue</code>, <code>sprites</code></td></tr>
+              <tr><td><code>SweetSwap</code></td><td><code>rows</code>, <code>columns</code>, <code>moveLimit</code>, <code>targetScore</code>, <code>seed</code></td></tr>
+              <tr><td><code>NoteRush</code></td><td><code>song</code>, <code>difficulty</code>, <code>missLimit</code>, pluggable <code>RhythmAudio</code></td></tr>
+            </tbody>
+          </table>
+          <p class="note">All games ship English and Turkish texts. Your art goes in with <code>GameAsset('assets/...')</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="play-banner">
+        <div>
+          <h2>Try every game now</h2>
+          <p>The demo app runs in your browser: default games, a branded campaign and a seeded daily puzzle.</p>
+        </div>
+        <a class="btn" href="play/">▶ Open the playground</a>
+      </div>
+    </section>
+
+    <footer>
+      MIT licensed · Built with Flutter and <a href="https://flame-engine.org">Flame</a> ·
+      <a href="https://github.com/VB10/flame_gallery">github.com/VB10/flame_gallery</a>
+    </footer>
+  </div>
+</body>
+</html>

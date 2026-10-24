@@ -1,0 +1,32 @@
+name: flame_gallery_rhythm
+description: "Note Rush: a four-lane rhythm tap Flame mini game for Flame Gallery with timing judgements, combos and pluggable music playback."
+version: 0.1.0
+repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery_rhythm
+issue_tracker: https://github.com/VB10/flame_gallery/issues
+topics:
+  - flame
+  - game
+  - minigame
+  - gamification
+  - rhythm
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.38.2
+  flame_gallery_core: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flame_test: ^2.3.1
+  very_good_analysis: ^11.0.0
+
+flutter:
+  assets:
+    - assets/images/

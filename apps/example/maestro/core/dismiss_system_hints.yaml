@@ -1,0 +1,13 @@
+# Android shows a one-time "Viewing full screen" hint when a game enters
+# immersive mode; it covers the HUD until dismissed. The `when` check is
+# instant, so this costs nothing when the hint is absent (and on iOS).
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ./keys.js
+---
+- runFlow:
+    when:
+      platform: Android
+      visible: ${output.keys.ANDROID_IMMERSIVE_OK}
+    commands:
+      - tapOn: ${output.keys.ANDROID_IMMERSIVE_OK}

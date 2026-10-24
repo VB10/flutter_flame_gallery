@@ -1,0 +1,34 @@
+name: Publish one package
+
+# Reusable job. dart-lang/setup-dart's ready-made publish workflow runs
+# `dart pub publish`, which cannot publish packages that depend on the Flutter
+# SDK, so this one installs Flutter and publishes with `flutter pub publish`.
+# setup-dart is still needed: it exchanges the GitHub OIDC token for pub.dev.
+on:
+  workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+
+env:
+  FLUTTER_VERSION: "3.47.6"
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.package }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Publish
+        working-directory: packages/${{ inputs.package }}
+        run: flutter pub publish --force

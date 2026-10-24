@@ -1,0 +1,4 @@
+appId: ${APP_ID}
+---
+- runFlow: ../../flows/fruit_slice/fruit_slice_quit_flow.yaml
+- runFlow: ../../flows/fruit_slice/fruit_slice_round_flow.yaml

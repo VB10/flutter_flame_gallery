@@ -1,0 +1,80 @@
+# Timed demo (60s, 3 lives): run, change lanes, jump and slide until the round
+# ends on its own (lives or time), then check the host result.
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ../../core/keys.js
+  - runScript: ../../core/flows_core.js
+  - runScript: ./runner_setup.js
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.CARD_RUNNER_TIMED}
+    timeout: ${output.config.longTimeout}
+- tapOn:
+    id: ${output.keys.CARD_RUNNER_TIMED}
+- tapOn:
+    id: ${output.keys.START_BUTTON}
+    waitToSettleTimeoutMs: 200 # games never settle
+# HUD checks need the round frozen: every element lookup waits for an idle UI,
+# which a running game never is. On iOS that wait is short, so pause and check.
+# On Android (UiAutomator) each lookup costs ~10s and the round would be over,
+# so Android only plays and verifies the result.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: ${output.keys.PAUSE_BUTTON}
+          waitToSettleTimeoutMs: 200 # games never settle
+      - assertVisible:
+          id: ${output.keys.PAUSE_PANEL}
+      - assertVisible:
+          id: ${output.keys.HUD_RUNNER_COINS}
+      - assertVisible:
+          id: ${output.keys.HUD_LIVES}
+      - assertVisible:
+          id: ${output.keys.HUD_TIMER}
+      - assertVisible:
+          id: ${output.keys.HUD_RUNNER_DISTANCE}
+          text: ${output.runner.DISTANCE_MOVING}
+      - tapOn:
+          id: ${output.keys.RESUME_BUTTON}
+- swipe:
+    start: 50%, 70%
+    end: 15%, 70%
+    duration: 150
+- swipe:
+    start: 50%, 70%
+    end: 50%, 45%
+    duration: 150
+- swipe:
+    start: 50%, 60%
+    end: 50%, 85%
+    duration: 150
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.GAME_OVER_PANEL}
+    timeout: ${output.config.roundTimeout}
+- runFlow: ../../core/dismiss_system_hints.yaml
+- assertVisible:
+    id: ${output.keys.FINAL_SCORE}
+- tapOn:
+    id: ${output.keys.CLOSE_BUTTON}
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.RESULT_CARD}
+    timeout: ${output.config.defaultTimeout}
+- assertVisible:
+    id: ${output.keys.RESULT_GAME}
+    text: ${output.values.GAME_RUNNER}
+- assertVisible:
+    id: ${output.keys.RESULT_REASON}
+    text: ${output.values.REASON_COMPLETED}
+- assertVisible:
+    id: ${output.keys.RESULT_SCORE}
+    text: ${output.runner.SCORE_POSITIVE}
+- assertVisible:
+    id: ${output.keys.RESULT_ENDED_BY}
+    text: ${output.runner.END_NATURAL}

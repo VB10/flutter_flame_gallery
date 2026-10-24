@@ -1,0 +1,64 @@
+name: Deploy site
+
+# Builds the landing page (site/) plus the playable web demo (apps/example ->
+# site/play/) and publishes them to GitHub Pages on every push to main.
+#
+# One time setup: Settings -> Pages -> Build and deployment -> Source:
+# "GitHub Actions".
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  FLUTTER_VERSION: "3.47.6"
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+
+      # Pages serves from /flame_gallery/, the demo lives one level deeper.
+      - name: Build web demo
+        working-directory: apps/example
+        run: flutter build web --release --base-href /flame_gallery/play/
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -R site/. _site/
+          cp -R apps/example/build/web _site/play
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

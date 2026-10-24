@@ -1,0 +1,32 @@
+name: flame_gallery_slice
+description: "Fruit Slice: a swipe-to-slice Flame mini game for Flame Gallery. Brandable sprites, colors and texts, with timer, lives and bombs."
+version: 0.1.0
+repository: https://github.com/VB10/flame_gallery/tree/main/packages/flame_gallery_slice
+issue_tracker: https://github.com/VB10/flame_gallery/issues
+topics:
+  - flame
+  - game
+  - minigame
+  - gamification
+  - arcade
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.38.2
+  flame_gallery_core: ^0.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flame_test: ^2.3.1
+  very_good_analysis: ^11.0.0
+
+flutter:
+  assets:
+    - assets/images/

@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Maestro: smoke (iOS simulator)",
+      "detail": "Runs apps/example/maestro/suites/smoke_test.yaml on the booted simulator. Install the app first (F5 or flutter run).",
+      "type": "shell",
+      "command": "./apps/example/maestro/run_maestro_test.sh",
+      "options": { "env": { "PLATFORM": "ios" } },
+      "problemMatcher": []
+    },
+    {
+      "label": "Maestro: smoke (Android emulator)",
+      "detail": "Same suite on the running emulator. Install the app first.",
+      "type": "shell",
+      "command": "./apps/example/maestro/run_maestro_test.sh",
+      "options": { "env": { "PLATFORM": "android" } },
+      "problemMatcher": []
+    },
+    {
+      "label": "Maestro: single suite",
+      "detail": "Pick one game's suite.",
+      "type": "shell",
+      "command": "./apps/example/maestro/run_maestro_test.sh suites/sub/${input:suite}_test_suite.yaml",
+      "options": { "env": { "PLATFORM": "${input:platform}" } },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "suite",
+      "type": "pickString",
+      "description": "Suite",
+      "options": ["home", "fruit_slice", "runner", "sweet_swap", "note_rush"]
+    },
+    {
+      "id": "platform",
+      "type": "pickString",
+      "description": "Platform",
+      "options": ["ios", "android"]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+# Full timed round: start, pause/resume, swipe, let the 30s timer run out,
+# then check the result the host app received.
+appId: ${APP_ID}
+onFlowStart:
+  - runScript: ../../core/keys.js
+  - runScript: ../../core/flows_core.js
+  - runScript: ./fruit_slice_setup.js
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.CARD_FRUIT_SLICE_BRAND}
+    timeout: ${output.config.longTimeout}
+- tapOn:
+    id: ${output.keys.CARD_FRUIT_SLICE_BRAND}
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.START_PANEL}
+    timeout: ${output.config.defaultTimeout}
+- tapOn:
+    id: ${output.keys.START_BUTTON}
+- runFlow: ../../core/dismiss_system_hints.yaml
+- assertVisible:
+    id: ${output.keys.HUD_SCORE}
+    text: ${output.slice.SCORE_START}
+- assertVisible:
+    id: ${output.keys.HUD_TIMER}
+- assertNotVisible:
+    id: ${output.keys.HUD_LIVES}
+
+- tapOn:
+    id: ${output.keys.PAUSE_BUTTON}
+- assertVisible:
+    id: ${output.keys.PAUSE_PANEL}
+- tapOn:
+    id: ${output.keys.RESUME_BUTTON}
+- assertNotVisible:
+    id: ${output.keys.PAUSE_PANEL}
+
+# Start inside 12..88% so Android's edge back gesture (which pauses, then
+# closes the game) is not triggered.
+- repeat:
+    times: 6
+    commands:
+      - swipe:
+          start: 12%, 55%
+          end: 88%, 45%
+          duration: 200
+      - swipe:
+          start: 88%, 65%
+          end: 12%, 50%
+          duration: 200
+
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.GAME_OVER_PANEL}
+    timeout: ${output.config.roundTimeout}
+- assertVisible:
+    id: ${output.keys.FINAL_SCORE}
+- tapOn:
+    id: ${output.keys.CLOSE_BUTTON}
+
+- extendedWaitUntil:
+    visible:
+      id: ${output.keys.RESULT_CARD}
+    timeout: ${output.config.defaultTimeout}
+- assertVisible:
+    id: ${output.keys.RESULT_GAME}
+    text: ${output.values.GAME_FRUIT_SLICE}
+- assertVisible:
+    id: ${output.keys.RESULT_REASON}
+    text: ${output.values.REASON_COMPLETED}
+- assertVisible:
+    id: ${output.keys.RESULT_ENDED_BY}
+    text: ${output.slice.END_TIME_UP}

@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.47.6"
+
+jobs:
+  analyze:
+    name: Format & analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed packages apps/example/lib
+      - run: dart pub global activate melos
+      - run: melos run analyze
+
+  test:
+    name: Unit & game tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart pub global activate melos
+      - run: melos run test
+
+  package:
+    name: Publish dry run
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - flame_gallery_core
+          - flame_gallery_slice
+          - flame_gallery_runner
+          - flame_gallery_match
+          - flame_gallery_rhythm
+          - flame_gallery
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Validate ${{ matrix.package }}
+        working-directory: packages/${{ matrix.package }}
+        run: flutter pub publish --dry-run
+
+  example:
+    name: Build example (web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build web
+        working-directory: apps/example
+        run: flutter build web --release

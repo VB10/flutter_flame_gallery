@@ -1,0 +1,12 @@
+appId: ${APP_ID}
+---
+# Home
+- runFlow: ./sub/home_test_suite.yaml
+# Fruit Slice
+- runFlow: ./sub/fruit_slice_test_suite.yaml
+# Ruins Runner
+- runFlow: ./sub/runner_test_suite.yaml
+# Sweet Swap
+- runFlow: ./sub/sweet_swap_test_suite.yaml
+# Note Rush
+- runFlow: ./sub/note_rush_test_suite.yaml
