@@ -103,8 +103,11 @@ void main() {
       await _settle(game);
 
       expect(game.phase.value, GamePhase.over);
-      expect(game.result?.stats['endedBy'], MatchEndCause.outOfMoves.name);
-      expect(game.result?.stats['movesUsed'], 1);
+      expect(
+        game.result?.stats[GameStatKeys.endedBy],
+        MatchEndCause.outOfMoves.name,
+      );
+      expect(game.result?.stats[MatchStatKeys.movesUsed], 1);
     },
   );
 
@@ -118,7 +121,10 @@ void main() {
       await _settle(game);
 
       expect(game.phase.value, GamePhase.over);
-      expect(game.result?.stats['endedBy'], MatchEndCause.target.name);
+      expect(
+        game.result?.stats[GameStatKeys.endedBy],
+        MatchEndCause.target.name,
+      );
     },
   );
 
@@ -133,7 +139,10 @@ void main() {
         ..update(0.6);
 
       expect(game.phase.value, GamePhase.over);
-      expect(game.result?.stats['endedBy'], MatchEndCause.timeUp.name);
+      expect(
+        game.result?.stats[GameStatKeys.endedBy],
+        MatchEndCause.timeUp.name,
+      );
     },
   );
 
@@ -151,7 +160,10 @@ void main() {
       await _settle(game);
 
       expect(game.phase.value, GamePhase.over);
-      expect(game.result?.stats['endedBy'], MatchEndCause.timeUp.name);
+      expect(
+        game.result?.stats[GameStatKeys.endedBy],
+        MatchEndCause.timeUp.name,
+      );
       expect(game.result?.score, greaterThan(0));
     },
   );

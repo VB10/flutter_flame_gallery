@@ -8,5 +8,6 @@ export 'src/config/rhythm_labels.dart';
 export 'src/config/rhythm_song.dart';
 export 'src/config/rhythm_sprites.dart';
 export 'src/game/rhythm_game.dart' show RhythmEndCause, RhythmGame;
+export 'src/game/rhythm_stat_keys.dart';
 export 'src/note_rush.dart';
 export 'src/testing/rhythm_keys.dart';

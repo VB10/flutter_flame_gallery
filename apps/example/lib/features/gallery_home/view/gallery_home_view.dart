@@ -107,7 +107,7 @@ final class _ResultCard extends StatelessWidget {
               _ResultField(
                 id: keys.resultEndedBy,
                 label: 'Ended by',
-                value: '${result.stats['endedBy'] ?? '-'}',
+                value: '${result.stats[GameStatKeys.endedBy] ?? '-'}',
               ),
               Text('Play time: ${result.playTime.inSeconds}s'),
               Text('Stats: ${result.stats}', style: textTheme.bodySmall),

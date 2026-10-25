@@ -138,6 +138,7 @@
         <a href="#games">Games</a>
         <a href="#usage">Usage</a>
         <a href="#customize">Customize</a>
+        <a href="#brand">Beyond colors</a>
         <a class="keep" href="https://pub.dev/packages/flame_gallery">pub.dev</a>
         <a class="keep" href="https://github.com/VB10/flutter_flame_gallery">GitHub</a>
       </div>
@@ -191,7 +192,7 @@
     <section>
       <div class="features">
         <div class="feature"><div class="icon">⚡</div><h3>One call</h3><p><code>FlameGallery.show</code> opens a full screen game with start, pause and game over menus and completes with a <code>GameResult</code>.</p></div>
-        <div class="feature"><div class="icon">🎨</div><h3>Your brand</h3><p>Color scheme, font, logo, every text, sprites and rules are config. No colors given? The game follows your app theme.</p></div>
+        <div class="feature"><div class="icon">🎨</div><h3>Your brand</h3><p>Color scheme, font, logo, background (color, gradient or image), every text, sprites and rules are config. No colors given? The game follows your app theme.</p></div>
         <div class="feature"><div class="icon">🎯</div><h3>Campaign ready</h3><p>Timers, lives, move limits, target scores and seeded "daily" boards, plus stats in every result.</p></div>
         <div class="feature"><div class="icon">🪶</div><h3>Light</h3><p>Library packages depend only on <code>flutter</code> and <code>flame</code>. No state management or codegen forced on your app.</p></div>
         <div class="feature"><div class="icon">🧪</div><h3>Testable</h3><p>Stable <code>Semantics</code> ids on every button and HUD value. A Maestro suite plays every game on iOS and Android.</p></div>
@@ -273,6 +274,43 @@
             </tbody>
           </table>
           <p class="note">All games ship English and Turkish texts. Your art goes in with <code>GameAsset('assets/...')</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="brand">
+      <h2>Beyond colors</h2>
+      <p class="sub">Backgrounds, your own dialogs and HUD, animated characters and sound effects, all without forking a game.</p>
+      <div class="steps">
+        <pre><span class="t">FlameGallery</span>.show(
+  context,
+  game: <span class="t">FruitSlice</span>(
+    theme: <span class="t">GameTheme</span>(
+      background: <span class="k">const</span> <span class="t">GameBackground</span>.gradient(
+        <span class="t">LinearGradient</span>(colors: [teal900, teal500]),
+      ),
+      themeData: myAppTheme,
+    ),
+  ),
+  <span class="c">// replace any built-in overlay</span>
+  overlays: <span class="t">GameOverlayBuilders</span>(
+    start: (context, ui) =&gt; <span class="t">MyBrandDialog</span>(onStart: ui.start),
+    gameOver: (context, ui) =&gt; <span class="t">MyResultSheet</span>(onClose: ui.close),
+  ),
+  <span class="c">// your audio package plays the cues</span>
+  sounds: <span class="t">CallbackSounds</span>((cue) =&gt; player.play(cue.name)),
+);</pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>You want</th><th>You use</th></tr></thead>
+            <tbody>
+              <tr><td>Color, gradient or image behind the game</td><td><code>GameTheme(background:)</code></td></tr>
+              <tr><td>Your design system in menus</td><td><code>GameTheme(themeData:)</code>, <code>GameOverlayBuilders</code></td></tr>
+              <tr><td>Animated runner or coin</td><td><code>GameAnimation</code> via <code>RunnerSprites</code></td></tr>
+              <tr><td>Sound effects</td><td><code>GameSounds</code> / <code>GameSoundCue</code> (no audio dependency)</td></tr>
+              <tr><td>Custom difficulty numbers</td><td><code>SliceDifficulty.normal.copyWith(...)</code></td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

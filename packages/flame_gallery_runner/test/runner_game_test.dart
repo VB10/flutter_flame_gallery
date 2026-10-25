@@ -69,7 +69,10 @@ void main() {
     _step(game, seconds: 0.05);
 
     expect(game.phase.value, GamePhase.over);
-    expect(game.result?.stats['endedBy'], RunnerEndCause.outOfLives.name);
+    expect(
+      game.result?.stats[GameStatKeys.endedBy],
+      RunnerEndCause.outOfLives.name,
+    );
   });
 
   testWithGame<RunnerGame>('a block in another lane is harmless', _game, (
@@ -132,7 +135,10 @@ void main() {
         game.update(1 / 30);
       }
       expect(game.phase.value, GamePhase.over);
-      expect(game.result?.stats['endedBy'], RunnerEndCause.timeUp.name);
+      expect(
+        game.result?.stats[GameStatKeys.endedBy],
+        RunnerEndCause.timeUp.name,
+      );
     },
   );
 

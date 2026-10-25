@@ -54,5 +54,5 @@ final class NoteRush extends GalleryGame<RhythmGame> {
 
   @override
   Widget buildHud(BuildContext context, RhythmGame game) =>
-      RhythmHud(game: game);
+      RhythmHud(game: game, strings: strings);
 }

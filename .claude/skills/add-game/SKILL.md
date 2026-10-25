@@ -32,7 +32,7 @@ Creates `packages/flame_gallery_<name>` following the same shape as `packages/fl
      lib/src/view/<name>_hud.dart        HUD from ValueNotifiers + HudChip
      test/                               logic tests + flame_test flow tests
    ```
-   The game class must: take `config`, `colors`, `gameId`, optional `math.Random`; set `images = Images(prefix: '')`; implement `onRoundStart`; end via `finish()`; expose an end-cause in `collectStats()['endedBy']`; dispose its notifiers in `onRemove`.
+   The game class must: take `config`, `colors`, `gameId`, optional `math.Random` (gameplay only; particles use their own `_effectsRandom`); mix in `GameEndCause<XEndCause>` and end via `finishWith(cause)`; load sprites with `loadSprites(...)` / `loadSprite(asset.key)` and `addBackground(config.background)`; use `RoundCountdown` for a time limit; implement `onRoundStart`; key `collectStats()` with an exported `XStatKeys` const class (`src/game/<name>_stat_keys.dart`) and spread `...super.collectStats()` last; dispose its notifiers (and the countdown) in `onRemove`. HUD starts with `HudScoreChip` (+ `HudTimerChip` when timed).
 
    Default strings: `static const stringsEn = GameStrings.en(...)` and `stringsTr = GameStrings.tr(...)`.
 

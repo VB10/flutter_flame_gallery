@@ -112,7 +112,10 @@ void main() {
 
       expect(game.phase.value, GamePhase.over);
       expect(game.missesLeft.value, 0);
-      expect(game.result?.stats['endedBy'], RhythmEndCause.tooManyMisses.name);
+      expect(
+        game.result?.stats[GameStatKeys.endedBy],
+        RhythmEndCause.tooManyMisses.name,
+      );
     },
   );
 
@@ -123,9 +126,12 @@ void main() {
     _advanceTo(game, 5.05);
 
     expect(game.phase.value, GamePhase.over);
-    expect(game.result?.stats['endedBy'], RhythmEndCause.songEnd.name);
-    expect(game.result?.stats['miss'], 2);
-    expect(game.result?.stats['accuracy'], 0);
+    expect(
+      game.result?.stats[GameStatKeys.endedBy],
+      RhythmEndCause.songEnd.name,
+    );
+    expect(game.result?.stats[RhythmStatKeys.miss], 2);
+    expect(game.result?.stats[RhythmStatKeys.accuracy], 0);
   });
 
   testWithGame<RhythmGame>(

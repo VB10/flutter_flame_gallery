@@ -6,3 +6,4 @@ export 'src/config/slice_difficulty.dart';
 export 'src/config/slice_item.dart';
 export 'src/fruit_slice.dart';
 export 'src/game/slice_game.dart' show SliceEndCause, SliceGame;
+export 'src/game/slice_stat_keys.dart';

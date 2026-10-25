@@ -34,12 +34,8 @@ final class TapCounter extends GalleryGame<TapGame> {
   TapGame createGame(ColorScheme colors) => TapGame();
 
   @override
-  Widget buildHud(BuildContext context, TapGame game) => HudValueChip<int>(
-    listenable: game.score,
-    icon: Icons.touch_app,
-    label: (score) => '$score',
-    semanticsId: GalleryKeys.hudScore,
-  );
+  Widget buildHud(BuildContext context, TapGame game) =>
+      HudScoreChip(score: game.score);
 }
 ```
 

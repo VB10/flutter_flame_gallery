@@ -15,6 +15,9 @@ final class GameStrings {
     required this.gameOver,
     required this.score,
     this.pause = 'Pause',
+    this.combo = '×{value}',
+    this.distance = '{value} m',
+    this.accuracy = '{value}%',
   });
 
   const GameStrings.en({required this.title, required this.instructions})
@@ -25,7 +28,10 @@ final class GameStrings {
       paused = 'Paused',
       gameOver = 'Game over',
       score = 'Score',
-      pause = 'Pause';
+      pause = 'Pause',
+      combo = '×{value}',
+      distance = '{value} m',
+      accuracy = '{value}%';
 
   const GameStrings.tr({required this.title, required this.instructions})
     : start = 'Başla',
@@ -35,7 +41,10 @@ final class GameStrings {
       paused = 'Duraklatıldı',
       gameOver = 'Oyun bitti',
       score = 'Skor',
-      pause = 'Duraklat';
+      pause = 'Duraklat',
+      combo = '×{value}',
+      distance = '{value} m',
+      accuracy = '%{value}';
 
   final String title;
   final String instructions;
@@ -50,6 +59,16 @@ final class GameStrings {
   /// Accessibility label of the HUD pause button.
   final String pause;
 
+  /// Templates for the in-game value texts. `{value}` is replaced by the
+  /// number: combo / bonus labels, runner distance, rhythm accuracy.
+  final String combo;
+  final String distance;
+  final String accuracy;
+
+  /// Fills the `{value}` placeholder of [template].
+  static String fill(String template, Object value) =>
+      template.replaceAll('{value}', '$value');
+
   GameStrings copyWith({
     String? title,
     String? instructions,
@@ -61,6 +80,9 @@ final class GameStrings {
     String? gameOver,
     String? score,
     String? pause,
+    String? combo,
+    String? distance,
+    String? accuracy,
   }) => GameStrings(
     title: title ?? this.title,
     instructions: instructions ?? this.instructions,
@@ -72,5 +94,8 @@ final class GameStrings {
     gameOver: gameOver ?? this.gameOver,
     score: score ?? this.score,
     pause: pause ?? this.pause,
+    combo: combo ?? this.combo,
+    distance: distance ?? this.distance,
+    accuracy: accuracy ?? this.accuracy,
   );
 }

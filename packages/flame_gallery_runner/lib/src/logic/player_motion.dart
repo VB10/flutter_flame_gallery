@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:flame_gallery_runner/src/logic/obstacle_row_planner.dart';
 import 'package:flame_gallery_runner/src/logic/runner_types.dart';
 
 /// Lane, pose and invulnerability of the player, independent of rendering.
 final class PlayerMotion {
-  PlayerMotion({this.laneCount = 3}) : _lane = laneCount ~/ 2;
+  PlayerMotion({this.laneCount = ObstacleRowPlanner.laneCount})
+    : _lane = laneCount ~/ 2;
 
   static const jumpDuration = 0.65;
   static const slideDuration = 0.65;

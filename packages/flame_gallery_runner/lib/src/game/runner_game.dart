@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flame/cache.dart';
 import 'package:flame/components.dart';
 import 'package:flame_gallery_core/flame_gallery_core.dart';
 import 'package:flame_gallery_runner/src/component/player_component.dart';
@@ -10,6 +9,7 @@ import 'package:flame_gallery_runner/src/component/runner_track.dart';
 import 'package:flame_gallery_runner/src/component/track_object.dart';
 import 'package:flame_gallery_runner/src/config/runner_config.dart';
 import 'package:flame_gallery_runner/src/game/runner_layout.dart';
+import 'package:flame_gallery_runner/src/game/runner_stat_keys.dart';
 import 'package:flame_gallery_runner/src/logic/obstacle_row_planner.dart';
 import 'package:flame_gallery_runner/src/logic/player_motion.dart';
 import 'package:flame_gallery_runner/src/logic/runner_rules.dart';
@@ -19,7 +19,8 @@ import 'package:flutter/material.dart';
 
 enum RunnerEndCause { outOfLives, timeUp, quit }
 
-final class RunnerGame extends GalleryFlameGame {
+final class RunnerGame extends GalleryFlameGame
+    with GameEndCause<RunnerEndCause> {
   RunnerGame({
     required this.config,
     required this.colors,
@@ -27,9 +28,7 @@ final class RunnerGame extends GalleryFlameGame {
     math.Random? random,
   }) : _planner = ObstacleRowPlanner(random: random),
        _lives = ValueNotifier<int>(config.lives),
-       _secondsLeft = ValueNotifier<int?>(_ceilSeconds(config.timeLimit)) {
-    images = Images(prefix: '');
-  }
+       _countdown = RoundCountdown(config.timeLimit);
 
   /// One screen height of scrolling equals this many metres.
   static const metersPerScreen = 20.0;
@@ -38,6 +37,9 @@ final class RunnerGame extends GalleryFlameGame {
   static const _hitBoxFactor = 0.6;
   static const _shadowAlpha = 0.25;
   static const _coinsPerLine = 3;
+
+  /// Below the track, which draws at -1.
+  static const _backgroundPriority = -2;
 
   /// Longest simulated step. Longer (jank) frames are clamped to it so
   /// obstacles can never tunnel through the hit window.
@@ -51,22 +53,21 @@ final class RunnerGame extends GalleryFlameGame {
   final ValueNotifier<int> _distance = ValueNotifier<int>(0);
   final ValueNotifier<int> _coins = ValueNotifier<int>(0);
   final ValueNotifier<int> _lives;
-  final ValueNotifier<int?> _secondsLeft;
+  final RoundCountdown _countdown;
 
   late final PlayerComponent _player;
   late final RowSpawner _spawner;
   late final Map<ObstacleKind, Sprite> _obstacleSprites;
   late final Sprite _coinSprite;
+  SpriteAnimation? _coinAnimation;
   RunnerLayout _layout = RunnerLayout(Vector2.zero());
   double _elapsed = 0;
   double _traveled = 0;
-  double _timeLeft = 0;
-  RunnerEndCause? _endCause;
 
   ValueListenable<int> get distance => _distance;
   ValueListenable<int> get coins => _coins;
   ValueListenable<int> get lives => _lives;
-  ValueListenable<int?> get secondsLeft => _secondsLeft;
+  ValueListenable<int?> get secondsLeft => _countdown.secondsLeft;
 
   @internal
   RunnerLayout get layout => _layout;
@@ -83,7 +84,7 @@ final class RunnerGame extends GalleryFlameGame {
   PlayerMotion get motion => _motion;
 
   @override
-  Color backgroundColor() => colors.surface;
+  Color backgroundColor() => resolveBackground(colors.surface);
 
   @override
   void onGameResize(Vector2 size) {
@@ -94,23 +95,28 @@ final class RunnerGame extends GalleryFlameGame {
   @override
   Future<void> onLoad() async {
     final sprites = config.sprites;
-    Future<Sprite> load(GameAsset asset) async =>
-        Sprite(await images.load(asset.key));
-
+    final [block, lowBarrier, highBarrier, coin] = await loadSprites([
+      sprites.block,
+      sprites.lowBarrier,
+      sprites.highBarrier,
+      sprites.coin,
+    ]);
     _obstacleSprites = {
-      ObstacleKind.block: await load(sprites.block),
-      ObstacleKind.lowBarrier: await load(sprites.lowBarrier),
-      ObstacleKind.highBarrier: await load(sprites.highBarrier),
+      ObstacleKind.block: block,
+      ObstacleKind.lowBarrier: lowBarrier,
+      ObstacleKind.highBarrier: highBarrier,
     };
-    _coinSprite = await load(sprites.coin);
-    final background = config.background;
-    if (background != null) {
-      await add(_Background(sprite: await load(background)));
-    }
+    _coinSprite = coin;
+    _coinAnimation = await sprites.coinAnimation?.load(images);
+    await addBackground(config.background, priority: _backgroundPriority);
 
+    final runnerAnimation = await sprites.runnerAnimation?.load(images);
     _player = PlayerComponent(
-      sprite: await load(sprites.runner),
+      sprite:
+          runnerAnimation?.frames.first.sprite ??
+          await loadSprite(sprites.runner.key),
       motion: _motion,
+      animation: runnerAnimation,
     );
     _spawner = RowSpawner(difficulty: config.difficulty, planner: _planner);
     await addAll([
@@ -138,14 +144,10 @@ final class RunnerGame extends GalleryFlameGame {
     _spawner.reset();
     _elapsed = 0;
     _traveled = 0;
-    _endCause = null;
-    _timeLeft =
-        (config.timeLimit?.inMilliseconds ?? 0) /
-        Duration.millisecondsPerSecond;
     _distance.value = 0;
     _coins.value = 0;
     _lives.value = config.lives;
-    _secondsLeft.value = _ceilSeconds(config.timeLimit);
+    _countdown.reset();
   }
 
   @override
@@ -153,26 +155,17 @@ final class RunnerGame extends GalleryFlameGame {
     final step = math.min(dt, _maxStep);
     super.update(step);
     if (!isPlaying) return;
-    _elapsed += step;
-    _traveled += speed * step;
-    final meters = (_traveled / size.y * metersPerScreen).floor();
-    if (meters != _distance.value) {
-      _distance.value = meters;
-      _syncScore();
-    }
-    _checkCollisions();
-    if (!isPlaying || config.timeLimit == null) return;
-    _timeLeft -= step;
-    final seconds = math.max(0, _timeLeft.ceil());
-    if (seconds != _secondsLeft.value) _secondsLeft.value = seconds;
-    if (_timeLeft <= 0) _end(RunnerEndCause.timeUp);
+    _run(step);
+    _checkObstacles();
+    if (isPlaying) _collectCoins();
+    if (isPlaying && _countdown.tick(step)) finishWith(RunnerEndCause.timeUp);
   }
 
   @override
   Map<String, Object> collectStats() => {
-    'distance': _distance.value,
-    'coins': _coins.value,
-    'endedBy': (_endCause ?? RunnerEndCause.quit).name,
+    RunnerStatKeys.distance: _distance.value,
+    RunnerStatKeys.coins: _coins.value,
+    ...super.collectStats(),
   };
 
   @internal
@@ -185,6 +178,7 @@ final class RunnerGame extends GalleryFlameGame {
         _motion.move(1);
       case SwipeDirection.up:
         _motion.jump();
+        sounds.play(GameSoundCue.jump);
       case SwipeDirection.down:
         _motion.slide();
     }
@@ -194,76 +188,101 @@ final class RunnerGame extends GalleryFlameGame {
   @internal
   void spawnRow(RunnerRow row, {double? y}) {
     final rowY = y ?? -_layout.laneWidth;
-    for (var lane = 0; lane < row.obstacles.length; lane++) {
-      final kind = row.obstacles[lane];
-      if (kind == null) continue;
-      add(
-        ObstacleComponent(
-          kind: kind,
-          lane: lane,
-          sprite: _obstacleSprites[kind]!,
-          position: Vector2(_layout.laneCenterX(lane), rowY),
-          size: kind == ObstacleKind.block
-              ? _layout.blockSize
-              : _layout.barrierSize,
-        ),
-      );
+    for (final (lane, kind) in row.obstacles.indexed) {
+      if (kind != null) add(_obstacle(kind, lane, rowY));
     }
     final coinLane = row.coinLane;
-    if (coinLane == null) return;
-    for (var i = 0; i < _coinsPerLine; i++) {
-      add(
-        CoinComponent(
-          lane: coinLane,
-          sprite: _coinSprite,
-          position: Vector2(
-            _layout.laneCenterX(coinLane),
-            rowY - i * _layout.coinSpacing,
-          ),
-          size: _layout.coinSize,
-        ),
-      );
-    }
+    if (coinLane != null) addAll(_coinLine(coinLane, rowY));
   }
 
-  void _checkCollisions() {
-    final lane = _player.occupiedLane;
-    final reach = _layout.playerSize * _hitBoxFactor / 2;
+  ObstacleComponent _obstacle(ObstacleKind kind, int lane, double y) =>
+      ObstacleComponent(
+        kind: kind,
+        lane: lane,
+        sprite: _obstacleSprites[kind]!,
+        position: Vector2(_layout.laneCenterX(lane), y),
+        size: kind == ObstacleKind.block
+            ? _layout.blockSize
+            : _layout.barrierSize,
+      );
 
+  /// [_coinsPerLine] coins stacked upward from [y].
+  List<CoinComponent> _coinLine(int lane, double y) => [
+    for (var i = 0; i < _coinsPerLine; i++)
+      CoinComponent(
+        lane: lane,
+        sprite: _coinSprite,
+        animation: _coinAnimation,
+        position: Vector2(
+          _layout.laneCenterX(lane),
+          y - i * _layout.coinSpacing,
+        ),
+        size: _layout.coinSize,
+      ),
+  ];
+
+  /// Scrolls the world and turns the distance into metres.
+  void _run(double step) {
+    _elapsed += step;
+    _traveled += speed * step;
+    final meters = (_traveled / size.y * metersPerScreen).floor();
+    if (meters == _distance.value) return;
+    _distance.value = meters;
+    _syncScore();
+  }
+
+  /// Each obstacle is resolved once: when it hits the player, or when it has
+  /// scrolled past them.
+  void _checkObstacles() {
+    final lane = _player.occupiedLane;
     for (final obstacle in children.whereType<ObstacleComponent>()) {
       if (obstacle.resolved) continue;
-      final dy = obstacle.y - _player.y;
-      if (dy - obstacle.size.y / 2 > reach) {
+      if (_hasPassedPlayer(obstacle)) {
         obstacle.resolved = true;
         continue;
       }
-      final overlaps = dy.abs() <= obstacle.size.y / 2 + reach;
-      if (obstacle.lane != lane || !overlaps) continue;
+      if (obstacle.lane != lane || !_touchesPlayer(obstacle)) continue;
       if (!RunnerRules.collides(obstacle.kind, _motion.pose)) continue;
       obstacle.resolved = true;
       if (_motion.isInvulnerable) continue;
       _hit();
       if (!isPlaying) return;
     }
+  }
 
+  void _collectCoins() {
+    final lane = _player.occupiedLane;
     for (final coin in children.whereType<CoinComponent>()) {
-      final overlaps = (coin.y - _player.y).abs() <= coin.size.y / 2 + reach;
-      if (coin.lane != lane || !overlaps || coin.isRemoving) continue;
+      if (coin.lane != lane || coin.isRemoving || !_touchesPlayer(coin)) {
+        continue;
+      }
       coin.removeFromParent();
       _coins.value++;
+      sounds.play(GameSoundCue.coin);
       _syncScore();
     }
   }
 
+  /// Half the height of the player's hit box.
+  double get _reach => _layout.playerSize * _hitBoxFactor / 2;
+
+  bool _hasPassedPlayer(TrackObject object) =>
+      object.y - _player.y - object.size.y / 2 > _reach;
+
+  bool _touchesPlayer(TrackObject object) =>
+      (object.y - _player.y).abs() <= object.size.y / 2 + _reach;
+
   void _hit() {
+    sounds.play(GameSoundCue.hit);
     _lives.value = math.max(0, _lives.value - 1);
     if (_lives.value == 0) {
-      _end(RunnerEndCause.outOfLives);
+      finishWith(RunnerEndCause.outOfLives);
     } else {
       _motion.makeInvulnerable();
     }
   }
 
+  /// Score is derived from distance and coins; [addScore] gets the change.
   void _syncScore() => addScore(
     RunnerRules.score(
           meters: _distance.value,
@@ -273,31 +292,12 @@ final class RunnerGame extends GalleryFlameGame {
         score.value,
   );
 
-  void _end(RunnerEndCause cause) {
-    _endCause = cause;
-    finish();
-  }
-
-  static int? _ceilSeconds(Duration? duration) => duration == null
-      ? null
-      : (duration.inMilliseconds / Duration.millisecondsPerSecond).ceil();
-
   @override
   void onRemove() {
     _distance.dispose();
     _coins.dispose();
     _lives.dispose();
-    _secondsLeft.dispose();
+    _countdown.dispose();
     super.onRemove();
-  }
-}
-
-final class _Background extends SpriteComponent {
-  _Background({required super.sprite}) : super(priority: -2);
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    this.size = size;
   }
 }

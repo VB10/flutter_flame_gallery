@@ -23,7 +23,8 @@ You review the Flame Gallery monorepo. Read `CLAUDE.md` first; it is the source 
 3. **Game contract**
    - Game subclasses `GalleryFlameGame`, resets everything in `onRoundStart`, never sets `phase` or overlays directly.
    - Scoring/penalties guarded by `isPlaying`.
-   - Images loaded through a game-local `Images(prefix: '')` with `GameAsset.key`; global `Flame.images` untouched.
+   - Images loaded through the base game's private cache (`loadSprite(asset.key)`, `loadSprites`, `addBackground`); global `Flame.images` untouched.
+   - Rounds end via `GameEndCause.finishWith(cause)`; time limits use `RoundCountdown`; the injected `Random` is not shared with particle effects.
    - Every `ValueNotifier`/controller created by the game is disposed in `onRemove`.
    - Game rules/math live in `src/logic/` as pure Dart with unit tests.
 

@@ -9,13 +9,20 @@ abstract final class FlameGallery {
     BuildContext context, {
     required GalleryGame game,
     ValueChanged<GameEvent>? onEvent,
+    GameOverlayBuilders overlays = const GameOverlayBuilders(),
+    GameSounds? sounds,
     bool useRootNavigator = true,
     bool immersive = true,
   }) => Navigator.of(context, rootNavigator: useRootNavigator).push(
     MaterialPageRoute<GameResult>(
       fullscreenDialog: true,
-      builder: (_) =>
-          GameHostPage(game: game, onEvent: onEvent, immersive: immersive),
+      builder: (_) => GameHostPage(
+        game: game,
+        onEvent: onEvent,
+        overlays: overlays,
+        sounds: sounds,
+        immersive: immersive,
+      ),
     ),
   );
 }

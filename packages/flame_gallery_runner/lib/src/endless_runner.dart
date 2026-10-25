@@ -44,5 +44,5 @@ final class EndlessRunner extends GalleryGame<RunnerGame> {
 
   @override
   Widget buildHud(BuildContext context, RunnerGame game) =>
-      RunnerHud(game: game);
+      RunnerHud(game: game, strings: strings);
 }

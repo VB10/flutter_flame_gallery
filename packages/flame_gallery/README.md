@@ -96,6 +96,15 @@ GameResult(
 );
 ```
 
+Read stats through the const keys instead of string literals:
+
+```dart
+final sliced = result.stats[SliceStatKeys.sliced];
+final endedBy = result.stats[GameStatKeys.endedBy]; // 'timeUp', 'bomb', 'quit'...
+```
+
+Each game exports its own keys: `SliceStatKeys`, `RunnerStatKeys`, `MatchStatKeys`, `RhythmStatKeys`.
+
 `onEvent` receives `GameStarted`, `GameScoreChanged`, `GamePaused`, `GameResumed` and `GameFinished`. `GameResult.toJson()` gives a flat map for analytics or a platform channel.
 
 ### Your own assets
@@ -111,6 +120,76 @@ FruitSlice(
     ],
   ),
 );
+```
+
+### Branding: background, dialogs, HUD
+
+```dart
+FlameGallery.show(
+  context,
+  game: FruitSlice(
+    theme: GameTheme(
+      // Color, gradient or image behind every game's playfield.
+      background: const GameBackground.gradient(
+        LinearGradient(colors: [Color(0xFF004D40), Color(0xFF00897B)]),
+      ),
+      // Full control over buttons, cards and text in the menus.
+      themeData: myAppTheme,
+    ),
+  ),
+  // Replace any built-in overlay. `ui` gives strings, score and actions.
+  overlays: GameOverlayBuilders(
+    start: (context, ui) => MyBrandDialog(title: ui.strings.title, onStart: ui.start),
+    gameOver: (context, ui) => MyResultSheet(
+      score: ui.result()?.score ?? 0,
+      onAgain: ui.start,
+      onClose: ui.close,
+    ),
+  ),
+);
+```
+
+### Animated sprites
+
+Anything that was a single image can be a horizontal sprite strip:
+
+```dart
+RunnerSprites(
+  runnerAnimation: GameAnimation(
+    GameAsset('assets/hero_run.png'),
+    frames: 6,
+    stepTime: 0.08,
+  ),
+  coinAnimation: GameAnimation(GameAsset('assets/coin_spin.png'), frames: 8),
+)
+```
+
+### Sound effects
+
+The library plays nothing itself. Pass a `GameSounds` and map cues to your audio package:
+
+```dart
+FlameGallery.show(
+  context,
+  game: EndlessRunner(),
+  sounds: CallbackSounds((cue) => switch (cue) {
+    GameSoundCue.coin => player.play('coin.mp3'),
+    GameSoundCue.hit => player.play('crash.mp3'),
+    _ => null,
+  }),
+);
+```
+
+Cues: `start`, `scoreUp`, `penalty`, `gameOver` (every game); `slice`, `bomb` (Fruit Slice); `jump`, `coin`, `hit` (Ruins Runner); `swap`, `match` (Sweet Swap); `noteHit`, `noteMiss` (Note Rush).
+
+### Difficulty
+
+Presets stay (`SliceDifficulty.hard`), and you can tune any number:
+
+```dart
+SliceConfig(difficulty: SliceDifficulty.normal.copyWith(maxWaveSize: 6, speedFactor: 1.3))
+RunnerConfig(difficulty: RunnerDifficulty.hard.copyWith(maxSpeed: 1.8))
+RhythmConfig(difficulty: RhythmDifficulty(approachSeconds: 1.1))
 ```
 
 ### System UI

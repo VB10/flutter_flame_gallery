@@ -34,8 +34,12 @@ final class FruitSlice extends GalleryGame<SliceGame> {
   String get gameId => id;
 
   @override
-  SliceGame createGame(ColorScheme colors) =>
-      SliceGame(config: config, colors: colors, gameId: id);
+  SliceGame createGame(ColorScheme colors) => SliceGame(
+    config: config,
+    colors: colors,
+    gameId: id,
+    comboTemplate: strings.combo,
+  );
 
   @override
   Widget buildHud(BuildContext context, SliceGame game) => SliceHud(game: game);

@@ -1,3 +1,4 @@
+import 'package:flame_gallery_core/src/testing/gallery_keys.dart';
 import 'package:flame_gallery_core/src/theme/gallery_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -89,6 +90,36 @@ final class HudValueChip<T> extends StatelessWidget {
     valueListenable: listenable,
     builder: (_, value, _) =>
         HudChip(icon: icon, label: label(value), semanticsId: semanticsId),
+  );
+}
+
+/// The score chip every game HUD starts with.
+final class HudScoreChip extends StatelessWidget {
+  const HudScoreChip({required this.score, super.key});
+
+  final ValueListenable<int> score;
+
+  @override
+  Widget build(BuildContext context) => HudValueChip<int>(
+    listenable: score,
+    icon: Icons.star_rounded,
+    label: (score) => '$score',
+    semanticsId: GalleryKeys.hudScore,
+  );
+}
+
+/// Whole seconds left in a timed round.
+final class HudTimerChip extends StatelessWidget {
+  const HudTimerChip({required this.secondsLeft, super.key});
+
+  final ValueListenable<int?> secondsLeft;
+
+  @override
+  Widget build(BuildContext context) => HudValueChip<int?>(
+    listenable: secondsLeft,
+    icon: Icons.timer_outlined,
+    label: (seconds) => '${seconds ?? 0}',
+    semanticsId: GalleryKeys.hudTimer,
   );
 }
 

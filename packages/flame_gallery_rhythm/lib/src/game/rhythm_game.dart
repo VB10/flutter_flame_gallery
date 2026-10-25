@@ -1,24 +1,26 @@
-import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flame/cache.dart';
 import 'package:flame/components.dart';
 import 'package:flame_gallery_core/flame_gallery_core.dart';
 import 'package:flame_gallery_rhythm/src/audio/rhythm_audio.dart';
+import 'package:flame_gallery_rhythm/src/audio/rhythm_audio_sync.dart';
 import 'package:flame_gallery_rhythm/src/component/lane_board.dart';
 import 'package:flame_gallery_rhythm/src/component/note_component.dart';
 import 'package:flame_gallery_rhythm/src/config/rhythm_config.dart';
 import 'package:flame_gallery_rhythm/src/config/rhythm_labels.dart';
 import 'package:flame_gallery_rhythm/src/game/rhythm_layout.dart';
+import 'package:flame_gallery_rhythm/src/game/rhythm_stat_keys.dart';
 import 'package:flame_gallery_rhythm/src/logic/note_chart.dart';
 import 'package:flame_gallery_rhythm/src/logic/rhythm_judge.dart';
 import 'package:flame_gallery_rhythm/src/logic/rhythm_score.dart';
+import 'package:flame_gallery_rhythm/src/logic/song_clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 enum RhythmEndCause { songEnd, tooManyMisses, quit }
 
-final class RhythmGame extends GalleryFlameGame {
+final class RhythmGame extends GalleryFlameGame
+    with GameEndCause<RhythmEndCause> {
   RhythmGame({
     required this.config,
     required this.colors,
@@ -34,10 +36,12 @@ final class RhythmGame extends GalleryFlameGame {
          for (final note in config.song.notes)
            ChartNote(time: config.song.timeOf(note.beat), lane: note.lane),
        ]),
+       _clock = SongClock(
+         hasAudio: audio != null,
+         latency: config.audioLatency.asSeconds,
+       ),
        _missesLeft = ValueNotifier<int?>(config.missLimit) {
-    images = Images(prefix: '');
-    _lastPhase = phase.value;
-    phase.addListener(_onPhaseChanged);
+    _audioSync = RhythmAudioSync(audio: audio, phase: phase);
   }
 
   final RhythmConfig config;
@@ -47,9 +51,6 @@ final class RhythmGame extends GalleryFlameGame {
   final RhythmAudio? audio;
   final RhythmLabels labels;
 
-  /// How long the clock waits for the player's first position report before
-  /// running on its own, so notes do not jump when the music kicks in.
-  static const _audioStartTimeout = 1.0;
   static const _labelFontSize = 22.0;
   static const _labelRise = 48.0;
   static const _labelDuration = 0.5;
@@ -58,6 +59,7 @@ final class RhythmGame extends GalleryFlameGame {
   static const _burstMaxRadius = 4.5;
 
   final NoteChart _chart;
+  final SongClock _clock;
   final RhythmScore _score = RhythmScore();
   final math.Random _effectsRandom = math.Random();
   final ValueNotifier<int> _combo = ValueNotifier<int>(0);
@@ -65,17 +67,23 @@ final class RhythmGame extends GalleryFlameGame {
     RhythmScore.fullAccuracy,
   );
   final ValueNotifier<int?> _missesLeft;
-  final List<Sprite> _sprites = [];
-  late RhythmLayout _layout = RhythmLayout(size: size, lanes: config.lanes);
-  late final LaneBoard _board;
-  double _clock = 0;
-  double _audioWait = 0;
-  bool _musicReported = false;
+  late final RhythmAudioSync _audioSync;
+
+  /// Notes on screen that can still be hit, by chart index.
+  final Map<int, NoteComponent> _openNotes = {};
+  late final List<Sprite> _sprites;
+  late final List<Color> _lanePalette = [
+    colors.primary,
+    colors.secondary,
+    colors.tertiary,
+    colors.error,
+  ];
   late final Map<Judgement, TextPaint> _labelPaints;
+  late final LaneBoard _board;
+  late RhythmLayout _layout = RhythmLayout(size: size, lanes: config.lanes);
+
+  /// Chart index of the next note to spawn.
   int _nextSpawn = 0;
-  late GamePhase _lastPhase;
-  bool _audioActive = false;
-  RhythmEndCause? _endCause;
 
   ValueListenable<int> get combo => _combo;
   ValueListenable<int> get accuracy => _accuracy;
@@ -86,28 +94,18 @@ final class RhythmGame extends GalleryFlameGame {
   /// Seconds into the song as the player hears it: the audio position minus
   /// [RhythmConfig.audioLatency] when the player reports one, otherwise the
   /// game's own clock.
-  double get songTime {
-    final position = audio?.position;
-    return position == null
-        ? _clock
-        : _seconds(position) - _seconds(config.audioLatency);
-  }
+  double get songTime => _clock.at(audio?.position?.asSeconds);
 
   @visibleForTesting
   int countOf(Judgement judgement) => _score.countOf(judgement);
 
   @override
-  Color backgroundColor() => colors.surface;
+  Color backgroundColor() => resolveBackground(colors.surface);
 
   @override
   Future<void> onLoad() async {
-    for (final asset in config.noteSprites) {
-      _sprites.add(Sprite(await images.load(asset.key)));
-    }
-    final background = config.background;
-    if (background != null) {
-      await add(_Background(sprite: Sprite(await images.load(background.key))));
-    }
+    _sprites = await loadSprites(config.noteSprites);
+    await addBackground(config.background);
     _board = LaneBoard(
       lane: colors.surfaceContainer,
       separator: colors.outlineVariant,
@@ -137,13 +135,11 @@ final class RhythmGame extends GalleryFlameGame {
   @override
   void onRoundStart() {
     removeAll(children.whereType<NoteComponent>());
+    _openNotes.clear();
     _chart.reset();
     _score.reset();
-    _clock = 0;
-    _audioWait = 0;
-    _musicReported = false;
+    _clock.reset();
     _nextSpawn = 0;
-    _endCause = null;
     _combo.value = 0;
     _accuracy.value = _score.accuracy;
     _missesLeft.value = config.missLimit;
@@ -153,25 +149,27 @@ final class RhythmGame extends GalleryFlameGame {
   void update(double dt) {
     super.update(dt);
     if (!isPlaying) return;
-    _advanceClock(dt);
-    final now = songTime;
+    _clock.advance(dt, audioPosition: audio?.position?.asSeconds);
+    final now = _clock.time;
     _spawnUpTo(now);
     for (final index in _chart.expire(now)) {
       _onMiss(index);
       if (!isPlaying) return;
     }
-    if (now >= _seconds(config.song.length)) _end(RhythmEndCause.songEnd);
+    if (now >= config.song.length.asSeconds) {
+      finishWith(RhythmEndCause.songEnd);
+    }
   }
 
   @override
   Map<String, Object> collectStats() => {
-    'perfect': _score.countOf(Judgement.perfect),
-    'great': _score.countOf(Judgement.great),
-    'good': _score.countOf(Judgement.good),
-    'miss': _score.countOf(Judgement.miss),
-    'maxCombo': _score.maxCombo,
-    'accuracy': _score.accuracy,
-    'endedBy': (_endCause ?? RhythmEndCause.quit).name,
+    RhythmStatKeys.perfect: _score.countOf(Judgement.perfect),
+    RhythmStatKeys.great: _score.countOf(Judgement.great),
+    RhythmStatKeys.good: _score.countOf(Judgement.good),
+    RhythmStatKeys.miss: _score.countOf(Judgement.miss),
+    RhythmStatKeys.maxCombo: _score.maxCombo,
+    RhythmStatKeys.accuracy: _score.accuracy,
+    ...super.collectStats(),
   };
 
   /// A tap in [lane]: judged against the closest open note of that lane.
@@ -181,18 +179,15 @@ final class RhythmGame extends GalleryFlameGame {
     _board.flashLane(lane);
     final hit = _chart.tap(lane, songTime);
     if (hit == null) return;
+    sounds.play(GameSoundCue.noteHit);
     addScore(_score.register(hit.judgement));
     _syncStats();
-    final note = children
-        .whereType<NoteComponent>()
-        .where((c) => c.index == hit.index)
-        .firstOrNull;
-    final at = Vector2(_layout.laneCenterX(lane), _layout.hitY);
-    note?.removeFromParent();
+    _openNotes.remove(hit.index)?.removeFromParent();
+    final at = _hitPoint(lane);
     addAll([
       GalleryBurst.at(
         position: at,
-        color: _laneColor(lane),
+        color: _lanePalette[lane % _lanePalette.length],
         random: _effectsRandom,
         lifespan: _burstLifespan,
         speed: _burstSpeed,
@@ -202,62 +197,39 @@ final class RhythmGame extends GalleryFlameGame {
     ]);
   }
 
+  /// Adds every note that is due to appear by [now].
   void _spawnUpTo(double now) {
     final lead = config.difficulty.approachSeconds;
     final notes = _chart.notes;
     while (_nextSpawn < notes.length && notes[_nextSpawn].time - lead <= now) {
       final note = notes[_nextSpawn];
-      add(
-        NoteComponent(
-          index: _nextSpawn,
-          time: note.time,
-          lane: note.lane,
-          sprite: _sprites[note.lane % _sprites.length],
-        ),
+      final component = NoteComponent(
+        index: _nextSpawn,
+        time: note.time,
+        lane: note.lane,
+        sprite: _sprites[note.lane % _sprites.length],
       );
+      _openNotes[_nextSpawn] = component;
+      add(component);
       _nextSpawn++;
     }
   }
 
   void _onMiss(int index) {
+    sounds.play(GameSoundCue.noteMiss);
     _score.register(Judgement.miss);
     _syncStats();
-    final note = _chart.notes[index];
-    children
-        .whereType<NoteComponent>()
-        .where((c) => c.index == index)
-        .firstOrNull
-        ?.markMissed();
-    add(
-      _label(
-        Judgement.miss,
-        Vector2(_layout.laneCenterX(note.lane), _layout.hitY),
-      ),
-    );
+    _openNotes.remove(index)?.markMissed();
+    add(_label(Judgement.miss, _hitPoint(_chart.notes[index].lane)));
     final limit = config.missLimit;
     if (limit == null) return;
     final left = math.max(0, limit - _score.countOf(Judgement.miss));
     _missesLeft.value = left;
-    if (left == 0) _end(RhythmEndCause.tooManyMisses);
+    if (left == 0) finishWith(RhythmEndCause.tooManyMisses);
   }
 
-  /// Follows the music whenever it reports a position, so the clock never
-  /// drifts from it; runs on its own only without audio or when the player
-  /// stops reporting. At start it waits briefly for the first report.
-  void _advanceClock(double dt) {
-    final audio = this.audio;
-    final position = audio?.position;
-    if (position != null) {
-      _musicReported = true;
-      _clock = _seconds(position) - _seconds(config.audioLatency);
-    } else if (audio != null &&
-        !_musicReported &&
-        _audioWait < _audioStartTimeout) {
-      _audioWait += dt;
-    } else {
-      _clock += dt;
-    }
-  }
+  Vector2 _hitPoint(int lane) =>
+      Vector2(_layout.laneCenterX(lane), _layout.hitY);
 
   FloatingLabel _label(Judgement judgement, Vector2 at) => FloatingLabel(
     text: switch (judgement) {
@@ -277,77 +249,12 @@ final class RhythmGame extends GalleryFlameGame {
     _accuracy.value = _score.accuracy;
   }
 
-  Color _laneColor(int lane) {
-    final palette = [
-      colors.primary,
-      colors.secondary,
-      colors.tertiary,
-      colors.error,
-    ];
-    return palette[lane % palette.length];
-  }
-
-  void _end(RhythmEndCause cause) {
-    _endCause = cause;
-    finish();
-  }
-
-  void _onPhaseChanged() {
-    final previous = _lastPhase;
-    final next = phase.value;
-    _lastPhase = next;
-    switch ((previous, next)) {
-      case (GamePhase.ready || GamePhase.over, GamePhase.playing):
-        _audioActive = true;
-        _callAudio((a) => a.start());
-      case (GamePhase.playing, GamePhase.paused):
-        _callAudio((a) => a.pause());
-      case (GamePhase.paused, GamePhase.playing):
-        _callAudio((a) => a.resume());
-      case (_, GamePhase.over):
-        _stopAudio();
-      default:
-        break;
-    }
-  }
-
-  void _stopAudio() {
-    if (!_audioActive) return;
-    _audioActive = false;
-    _callAudio((a) => a.stop());
-  }
-
-  /// Fire-and-forget; a failing player must never break the game loop.
-  void _callAudio(Future<void> Function(RhythmAudio audio) call) {
-    final audio = this.audio;
-    if (audio == null) return;
-    try {
-      unawaited(call(audio).catchError((Object _) {}));
-    } on Object catch (_) {
-      // Synchronous throw from the player; ignored on purpose.
-    }
-  }
-
-  static double _seconds(Duration duration) =>
-      duration.inMicroseconds / Duration.microsecondsPerSecond;
-
   @override
   void onRemove() {
-    phase.removeListener(_onPhaseChanged);
-    _stopAudio();
+    _audioSync.dispose();
     _combo.dispose();
     _accuracy.dispose();
     _missesLeft.dispose();
     super.onRemove();
-  }
-}
-
-final class _Background extends SpriteComponent {
-  _Background({required super.sprite}) : super(priority: -1);
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    this.size = size;
   }
 }

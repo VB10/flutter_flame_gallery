@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/sprite.dart';
 import 'package:flame_gallery_runner/src/game/runner_game.dart';
 import 'package:flame_gallery_runner/src/logic/player_motion.dart';
 import 'package:flame_gallery_runner/src/logic/runner_types.dart';
@@ -10,8 +11,12 @@ import 'package:flame_gallery_runner/src/logic/runner_types.dart';
 /// squash and the post-hit blink.
 final class PlayerComponent extends SpriteComponent
     with HasGameReference<RunnerGame> {
-  PlayerComponent({required super.sprite, required this.motion})
-    : super(anchor: Anchor.center, priority: 2);
+  PlayerComponent({
+    required super.sprite,
+    required this.motion,
+    SpriteAnimation? animation,
+  }) : _ticker = animation?.createTicker(),
+       super(anchor: Anchor.center, priority: 2);
 
   static const _laneEaseRate = 14.0;
   static const _jumpScale = 0.35;
@@ -21,6 +26,7 @@ final class PlayerComponent extends SpriteComponent
   static const _blinkOpacity = 0.3;
 
   final PlayerMotion motion;
+  final SpriteAnimationTicker? _ticker;
   double _blinkClock = 0;
 
   /// Lane used for collisions: the one the sprite currently stands in.
@@ -34,6 +40,11 @@ final class PlayerComponent extends SpriteComponent
   @override
   void update(double dt) {
     super.update(dt);
+    final ticker = _ticker;
+    if (ticker != null) {
+      ticker.update(dt);
+      sprite = ticker.getSprite();
+    }
     motion.tick(dt);
     final layout = game.layout;
     size.setAll(layout.playerSize);

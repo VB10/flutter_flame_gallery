@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame_gallery_runner/src/game/runner_game.dart';
@@ -36,8 +38,8 @@ final class RunnerSwipeInput extends PositionComponent
     super.onDragUpdate(event);
     if (event.pointerId != _activePointer || _decided) return;
     _travel.add(event.localDelta);
-    final threshold = size.x < size.y ? size.x : size.y;
-    if (_travel.length < threshold * _thresholdFactor) return;
+    final threshold = math.min(size.x, size.y) * _thresholdFactor;
+    if (_travel.length < threshold) return;
     _decided = true;
     game.onSwipe(SwipeDirection.fromDelta(_travel.x, _travel.y));
   }

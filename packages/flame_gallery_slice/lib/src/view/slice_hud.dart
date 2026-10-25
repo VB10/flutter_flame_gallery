@@ -14,19 +14,9 @@ final class SliceHud extends StatelessWidget {
       spacing: GallerySpacing.sm,
       runSpacing: GallerySpacing.sm,
       children: [
-        HudValueChip<int>(
-          listenable: game.score,
-          icon: Icons.star_rounded,
-          label: (score) => '$score',
-          semanticsId: GalleryKeys.hudScore,
-        ),
+        HudScoreChip(score: game.score),
         if (game.config.timeLimit != null)
-          HudValueChip<int?>(
-            listenable: game.secondsLeft,
-            icon: Icons.timer_outlined,
-            label: (seconds) => '${seconds ?? 0}',
-            semanticsId: GalleryKeys.hudTimer,
-          ),
+          HudTimerChip(secondsLeft: game.secondsLeft),
         if (maxLives != null)
           HudLivesChip(
             lives: game.lives,

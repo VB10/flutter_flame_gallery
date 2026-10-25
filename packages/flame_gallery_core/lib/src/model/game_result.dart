@@ -23,7 +23,8 @@ final class GameResult {
   final GameEndReason reason;
   final Duration playTime;
 
-  /// Game specific numbers, e.g. `{'sliced': 42, 'maxCombo': 5}`.
+  /// Game specific numbers, keyed by `GameStatKeys` and the game's own
+  /// `<Game>StatKeys`, e.g. `stats[SliceStatKeys.sliced]`.
   final Map<String, Object> stats;
 
   bool get isCompleted => reason == GameEndReason.completed;

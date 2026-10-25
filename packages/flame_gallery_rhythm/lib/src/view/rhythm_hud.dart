@@ -6,9 +6,10 @@ import 'package:flutter/material.dart';
 /// Score, combo and accuracy; hearts for the misses left when a miss limit is
 /// set (one heart per allowed miss, under `GalleryKeys.hudLives`).
 final class RhythmHud extends StatelessWidget {
-  const RhythmHud({required this.game, super.key});
+  const RhythmHud({required this.game, required this.strings, super.key});
 
   final RhythmGame game;
+  final GameStrings strings;
 
   @override
   Widget build(BuildContext context) {
@@ -17,22 +18,17 @@ final class RhythmHud extends StatelessWidget {
       spacing: GallerySpacing.sm,
       runSpacing: GallerySpacing.sm,
       children: [
-        HudValueChip<int>(
-          listenable: game.score,
-          icon: Icons.star_rounded,
-          label: (score) => '$score',
-          semanticsId: GalleryKeys.hudScore,
-        ),
+        HudScoreChip(score: game.score),
         HudValueChip<int>(
           listenable: game.combo,
           icon: Icons.bolt_rounded,
-          label: (combo) => '×$combo',
+          label: (combo) => GameStrings.fill(strings.combo, combo),
           semanticsId: RhythmKeys.hudCombo,
         ),
         HudValueChip<int>(
           listenable: game.accuracy,
           icon: Icons.track_changes_rounded,
-          label: (accuracy) => '$accuracy%',
+          label: (accuracy) => GameStrings.fill(strings.accuracy, accuracy),
           semanticsId: RhythmKeys.hudAccuracy,
         ),
         if (missLimit != null)

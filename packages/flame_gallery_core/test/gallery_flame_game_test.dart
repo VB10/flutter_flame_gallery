@@ -3,7 +3,7 @@ import 'package:flame_test/flame_test.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-final class _FakeGame extends GalleryFlameGame {
+base class _FakeGame extends GalleryFlameGame {
   _FakeGame() : super(gameId: 'fake') {
     for (final name in GameOverlays.all) {
       overlays.addEntry(name, (_, _) => const SizedBox.shrink());
@@ -137,4 +137,40 @@ void main() {
     expect(game.finish(reason: GameEndReason.quit), isNull);
     expect(game.phase.value, GamePhase.ready);
   });
+
+  group('GameEndCause', () {
+    testWithGame<_CausedGame>(
+      'reports the cause after the game stats',
+      _CausedGame.new,
+      (game) async {
+        game
+          ..start()
+          ..end(_Cause.timeUp);
+        expect(game.result?.stats, {
+          'rounds': 1,
+          GameStatKeys.endedBy: 'timeUp',
+        });
+        expect(game.endCause, _Cause.timeUp);
+      },
+    );
+
+    testWithGame<_CausedGame>(
+      'a quit after a caused round reports quit',
+      _CausedGame.new,
+      (game) async {
+        game
+          ..start()
+          ..end(_Cause.timeUp)
+          ..start();
+        expect(game.endCause, isNull);
+        expect(game.quit()?.stats[GameStatKeys.endedBy], 'quit');
+      },
+    );
+  });
+}
+
+enum _Cause { timeUp }
+
+final class _CausedGame extends _FakeGame with GameEndCause<_Cause> {
+  void end(_Cause cause) => finishWith(cause);
 }

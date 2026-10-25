@@ -12,6 +12,8 @@ final class RunnerSprites {
     this.block = defaultBlock,
     this.lowBarrier = defaultLowBarrier,
     this.highBarrier = defaultHighBarrier,
+    this.runnerAnimation,
+    this.coinAnimation,
   });
 
   static const defaultRunner = GameAsset(
@@ -38,6 +40,10 @@ final class RunnerSprites {
   /// Top-down player, facing the top of the screen.
   final GameAsset runner;
   final GameAsset coin;
+
+  /// Animated sheets that replace [runner] / [coin] when set.
+  final GameAnimation? runnerAnimation;
+  final GameAnimation? coinAnimation;
 
   /// Fills a lane; dodge by changing lane.
   final GameAsset block;

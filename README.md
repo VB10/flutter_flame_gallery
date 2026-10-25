@@ -49,7 +49,7 @@ graph TD
 | Package | Role | Depends on |
 |---|---|---|
 | [`flame_gallery`](packages/flame_gallery) | Facade: `FlameGallery.show` and every game. Most apps only need this. | core + all games |
-| [`flame_gallery_core`](packages/flame_gallery_core) | `GalleryGame`, `GalleryFlameGame`, `GameHostPage`, overlays, `GameTheme`, `GameStrings`, `GameResult`, `GameEvent`, HUD widgets, shared effects, `GalleryKeys` | `flame`, `flutter` |
+| [`flame_gallery_core`](packages/flame_gallery_core) | `GalleryGame`, `GalleryFlameGame`, `GameEndCause`, `RoundCountdown`, `GameHostPage`, overlays, `GameTheme`, `GameStrings`, `GameResult` + `GameStatKeys`, `GameEvent`, HUD widgets, shared effects, `GalleryKeys` | `flame`, `flutter` |
 | `flame_gallery_<game>` | One package per game: [slice](packages/flame_gallery_slice), [runner](packages/flame_gallery_runner), [match](packages/flame_gallery_match), [rhythm](packages/flame_gallery_rhythm) | core, `flame`, `flutter` |
 | [`apps/example`](apps/example) | Demo host app (iOS, Android, web), Maestro suite | `flame_gallery`, `flame_audio` |
 
@@ -61,6 +61,18 @@ A game is two classes:
 
 - **`GalleryGame<G>`** — the immutable, public description a host passes around: config + `GameTheme` + `GameStrings`. It creates a fresh Flame game per session (`createGame(colors)`) and builds its HUD.
 - **`GalleryFlameGame`** — the Flame side. It owns the phase machine, the score, the overlays and the event stream. A game only implements `onRoundStart()` and calls `addScore()` / `finish()`; `collectStats()` adds numbers to the result.
+
+Shared building blocks keep each game class down to orchestration:
+
+| Piece | What it replaces in every game |
+|---|---|
+| `GameEndCause<C>` mixin | `finishWith(SliceEndCause.bomb)` ends the round and reports the cause as `stats[GameStatKeys.endedBy]` (`quit` after a host close). |
+| `RoundCountdown` | Optional time limit: `secondsLeft` for the HUD, `tick(dt)` is `true` once when it runs out. |
+| `loadSprites` / `addBackground` | Parallel image loading into the game's private cache; optional full screen background. |
+| `HudScoreChip` / `HudTimerChip` | The chips every HUD starts with. |
+| `<Game>StatKeys` | Const keys for `GameResult.stats` (`MatchStatKeys.movesUsed`, ...), so hosts and tests never type a key by hand. |
+
+Game specific mechanics get their own small classes instead of growing the game class: `StageQueue` + `PieceGrid` (match), `SongClock` + `RhythmAudioSync` (rhythm), `SlicedHalfComponent.split` + `Ballistic` (slice). The injected `Random` drives gameplay only; particles use their own, so a seed reproduces a run however the player plays.
 
 ```mermaid
 stateDiagram-v2
@@ -96,7 +108,7 @@ sequenceDiagram
 
 Details that matter in production:
 
-- **Images** load from a game-private `Images(prefix: '')` cache with `GameAsset.key`; the global `Flame.images` is never touched, and the private cache is cleared in `onRemove` (Flame only clears caches in `dispose()`, which `GameWidget` never calls).
+- **Images** load from a game-private `Images(prefix: '')` cache (set up by `GalleryFlameGame`, in parallel via `loadSprites`) with `GameAsset.key`; the global `Flame.images` is never touched, and the private cache is cleared in `onRemove` (Flame only clears caches in `dispose()`, which `GameWidget` never calls).
 - **Lifecycle**: backgrounding pauses through the phase machine (so Flame does not auto-resume into a paused menu); the engine stops 0.8 s after game over to save battery.
 - **System UI**: games run in `immersiveSticky` and restore `edgeToEdge`; `FlameGallery.show(immersive: false)` opts out.
 - **Events** are a synchronous broadcast stream, so the quit result emitted during teardown still reaches the host.
@@ -111,6 +123,7 @@ lib/
   src/logic/                  pure Dart rules and math, unit tested
   src/component/              Flame components, one per file
   src/game/<game>_game.dart   GalleryFlameGame subclass, orchestration only
+  src/game/<game>_stat_keys.dart  const GameResult.stats keys (exported)
   src/view/                   Flutter HUD
   src/testing/                Semantics ids for UI tests
 assets/images/                generated, IP-clean placeholder sprites
@@ -124,7 +137,7 @@ assets/images/                generated, IP-clean placeholder sprites
 | Game flow | `flame_test` | Phases, scoring, end conditions, audio call order, deterministic runs with injected `Random(seed)` |
 | End to end | [Maestro](apps/example/maestro) | Every game on a real iOS simulator and Android emulator: menus, pause, HUD values, exact scores (seeded Sweet Swap board → 210 after a 3-level cascade), results reaching the host |
 
-124 unit and game tests; 7 Maestro flows passing on iPhone 17 and Pixel 7a.
+148 unit and game tests; 7 Maestro flows passing on iPhone 17 and Pixel 7a.
 Menus and HUD values carry `Semantics(identifier:)` values from `GalleryKeys` (plus `RunnerKeys`, `MatchKeys`, `RhythmKeys`) so host apps can drive the games from their own UI tests.
 
 ## Development

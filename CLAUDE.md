@@ -55,12 +55,18 @@ site/              GitHub Pages landing page (pages.yml adds the web demo under 
 | Type | Role |
 |---|---|
 | `GalleryGame<G>` | Immutable public description (config + `GameTheme` + `GameStrings`). `createGame(colors)` builds a fresh Flame game per session; `buildHud` returns the in-game HUD. |
-| `GalleryFlameGame` | Base `FlameGame` (`abstract base class`). Owns phase machine `ready → playing ⇄ paused → over`, read-only `score`/`phase` (`ValueListenable`), overlay switching and a **synchronous** broadcast `events` stream. Subclasses implement `onRoundStart()`, call `addScore()` / `finish()`, optionally `collectStats()`. `quit()` ends without the game-over panel (host close, and automatically in `onRemove`). |
+| `GalleryFlameGame` | Base `FlameGame` (`abstract base class`). Owns phase machine `ready → playing ⇄ paused → over`, read-only `score`/`phase` (`ValueListenable`), overlay switching and a **synchronous** broadcast `events` stream. Subclasses implement `onRoundStart()`, call `addScore()` / `finish()`, optionally `collectStats()`. `quit()` ends without the game-over panel (host close, and automatically in `onRemove`). Gives every game a private `Images(prefix: '')`; load with `loadSprite(asset.key)`, `loadSprites(assets)` (parallel) and `addBackground(config.background)`. |
+| `GameEndCause<C>` | Mixin: games end with `finishWith(cause)`; `collectStats()` adds `endedBy` (`quit` after a host close). Game stats spread `...super.collectStats()` last. |
+| `RoundCountdown` | Optional time limit → `secondsLeft` (`ValueListenable<int?>`); `reset()` on round start, `tick(dt)` returns `true` once when it runs out, `dispose()` in `onRemove`. `Duration.asSeconds` for frame math. |
 | `GameHostPage` | Builds the `GameWidget`, the shared overlays (start / hud / pause / game over), handles back button and app background (auto pause). |
-| `GameTheme` | Optional `ColorScheme`, font, logo. No scheme → host `Theme` kept as is (font swapped if given). With a scheme → a fresh `ThemeData` so text/component colors match the brand brightness. |
+| `GameTheme` | Optional `ColorScheme`, `themeData`, font, logo, `GameBackground` (color/gradient/image drawn by the host behind the canvas; games return `resolveBackground(colors.surface)` from `backgroundColor()`). No scheme → host `Theme` kept as is (font swapped if given). With a scheme → a fresh `ThemeData` so text/component colors match the brand brightness. |
 | `GameStrings` | All overlay texts; `GameStrings.en/.tr` + `copyWith`. |
-| `GameAsset` | Asset path + optional package → bundle `key`. Games load images with `Images(prefix: '')` and `asset.key` (never mutate the global `Flame.images`). |
-| `GameResult` / `GameEvent` | What the host receives. `GameResult.toJson()` is the future platform channel payload. |
+| `GameOverlayBuilders` / `GameUi` | Host replaces start/hud/pause/gameOver overlays; `GameUi` exposes strings, score, actions. |
+| `GameSounds` / `GameSoundCue` | Effect cues (`sounds.play(cue)`); base class emits start/scoreUp/penalty/gameOver, games add theirs. No audio dependency in libraries. |
+| `GameAnimation` | Horizontal sprite strip, `load(images)` → `SpriteAnimation`. |
+| `GameAsset` | Asset path + optional package → bundle `key`. Loaded through the base game's private image cache (never mutate the global `Flame.images`). |
+| HUD chips | `HudScoreChip`, `HudTimerChip`, `HudLivesChip`, `HudValueChip` (+ `HudChip`). HUDs start with `HudScoreChip`; game-specific values use `HudValueChip` with a `<Game>Keys` id. |
+| `GameResult` / `GameEvent` | What the host receives. `GameResult.toJson()` is the future platform channel payload. `stats` keys are consts: `GameStatKeys.endedBy` + each game's exported `<Game>StatKeys` (`lib/src/game/<name>_stat_keys.dart`); never write a stat key as a string literal. |
 
 ## Game package structure
 
@@ -92,7 +98,8 @@ Use the `add-game` skill (`.claude/skills/add-game`) to scaffold a new game.
 - Every `ValueNotifier` a game creates is disposed in `onRemove`. `GalleryFlameGame.onRemove` clears the game's private `Images` cache (Flame only does that in `dispose()`, which `GameWidget` never calls).
 - Exported game classes (`SliceGame`, `RunnerGame`, ...) keep package-internal entry points (input handlers, spawners, layout) behind `@internal` (from `flutter/foundation.dart`); hosts only read the `ValueListenable`s.
 - Configs and themes: `copyWith` takes `ValueGetter<T?>?` for nullable fields (`copyWith(bomb: () => null)` clears, omitting keeps).
-- Effects: use `GalleryBurst.at` and `FloatingLabel` from core; create `TextPaint`s once (e.g. in `onLoad`), never per label.
+- Effects: use `GalleryBurst.at` and `FloatingLabel` from core; create `TextPaint`s once (e.g. in `onLoad`), never per label. Particles take a separate `_effectsRandom`: the injected `Random` drives gameplay only, so a seed reproduces spawns however the player plays.
+- Game classes stay orchestration: timed stage queues, clocks, audio sync, grid bookkeeping go to their own class (`StageQueue`, `SongClock`, `RhythmAudioSync`, `PieceGrid`), pure Dart ones in `src/logic/` with tests.
 - Minimal comments: public API docs + non-obvious math only.
 - Lints: `very_good_analysis` 11 + root `analysis_options.yaml`. Disabled on purpose: `unnecessary_type_name_in_constructor` (keep classic constructor syntax), `discarded_futures` (Flame `add()` returns `FutureOr`).
 - Done = `melos run analyze` clean + `melos run test` green.

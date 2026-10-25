@@ -11,10 +11,12 @@ final class BladeTrail extends Component {
       _glow = Paint()
         ..color = glow
         ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, _glowBlur);
 
   static const _lifetime = 0.16;
   static const _maxWidth = 9.0;
+  static const _glowBlur = 6.0;
+  static const _glowWidthFactor = 2.2;
 
   final Paint _core;
   final Paint _glow;
@@ -45,7 +47,7 @@ final class BladeTrail extends Component {
       final a = from.position.toOffset();
       final b = to.position.toOffset();
       canvas
-        ..drawLine(a, b, _glow..strokeWidth = width * 2.2)
+        ..drawLine(a, b, _glow..strokeWidth = width * _glowWidthFactor)
         ..drawLine(a, b, _core..strokeWidth = width);
     }
   }

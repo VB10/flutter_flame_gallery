@@ -1,22 +1,32 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flame/cache.dart';
+import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
+import 'package:flame_gallery_core/src/component/backdrop_sprite.dart';
 import 'package:flame_gallery_core/src/game/game_overlays.dart';
 import 'package:flame_gallery_core/src/game/game_phase.dart';
+import 'package:flame_gallery_core/src/model/game_asset.dart';
 import 'package:flame_gallery_core/src/model/game_event.dart';
 import 'package:flame_gallery_core/src/model/game_result.dart';
+import 'package:flame_gallery_core/src/sound/game_sounds.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 /// Base class every gallery game extends.
 ///
 /// Owns the phase machine (ready → playing ⇄ paused → over), the score, the
 /// shared overlays and the event stream. Subclasses only implement gameplay:
 /// reset their world in [onRoundStart], call [addScore] and [finish].
+///
+/// Every game gets its own [images] cache (prefix `''`, so [GameAsset.key]
+/// loads as is) and never touches the global `Flame.images`.
 abstract base class GalleryFlameGame extends FlameGame {
-  GalleryFlameGame({required this.gameId});
+  GalleryFlameGame({required this.gameId}) {
+    images = Images(prefix: '');
+  }
 
   final String gameId;
 
@@ -34,6 +44,8 @@ abstract base class GalleryFlameGame extends FlameGame {
   final StreamController<GameEvent> _events =
       StreamController<GameEvent>.broadcast(sync: true);
   double _playSeconds = 0;
+  GameSounds _sounds = const SilentSounds();
+  bool _hasBackdrop = false;
   double _runoutLeft = 0;
   GameResult? _result;
 
@@ -46,6 +58,22 @@ abstract base class GalleryFlameGame extends FlameGame {
     microseconds: (_playSeconds * Duration.microsecondsPerSecond).round(),
   );
 
+  /// Sound effects sink, set by the host page. Silent by default.
+  GameSounds get sounds => _sounds;
+
+  /// Called by the host page right after creating the game.
+  @internal
+  void configure({GameSounds? sounds, bool hasBackdrop = false}) {
+    _sounds = sounds ?? const SilentSounds();
+    _hasBackdrop = hasBackdrop;
+  }
+
+  /// Games return this from `backgroundColor()`: transparent when the theme
+  /// draws its own `GameBackground` behind the canvas, [surface] otherwise.
+  @protected
+  Color resolveBackground(Color surface) =>
+      _hasBackdrop ? Colors.transparent : surface;
+
   /// Clears the world for a fresh round. Called on every [start].
   @protected
   void onRoundStart();
@@ -53,6 +81,21 @@ abstract base class GalleryFlameGame extends FlameGame {
   /// Extra numbers attached to the [GameResult].
   @protected
   Map<String, Object> collectStats() => const {};
+
+  /// Loads [assets] in parallel; the result keeps their order.
+  @protected
+  Future<List<Sprite>> loadSprites(Iterable<GameAsset> assets) =>
+      Future.wait([for (final asset in assets) loadSprite(asset.key)]);
+
+  /// Adds [asset] as a full screen image behind the world. `null` is a no-op,
+  /// so games pass their optional config background straight in.
+  @protected
+  Future<void> addBackground(GameAsset? asset, {int priority = -1}) async {
+    if (asset == null) return;
+    await add(
+      BackdropSprite(sprite: await loadSprite(asset.key), priority: priority),
+    );
+  }
 
   @override
   Future<void> onLoad() async {
@@ -69,6 +112,7 @@ abstract base class GalleryFlameGame extends FlameGame {
     onRoundStart();
     _setPhase(GamePhase.playing);
     _emit(GameStarted(gameId: gameId));
+    _sounds.play(GameSoundCue.start);
   }
 
   void pause() {
@@ -97,6 +141,7 @@ abstract base class GalleryFlameGame extends FlameGame {
     if (!isPlaying || points == 0) return;
     _score.value = math.max(0, _score.value + points);
     _emit(GameScoreChanged(gameId: gameId, score: _score.value));
+    _sounds.play(points > 0 ? GameSoundCue.scoreUp : GameSoundCue.penalty);
   }
 
   @override
@@ -141,6 +186,7 @@ abstract base class GalleryFlameGame extends FlameGame {
     _runoutLeft = _overRunoutSeconds;
     if (showGameOver) _syncOverlays();
     _emit(GameFinished(result: result));
+    if (showGameOver) _sounds.play(GameSoundCue.gameOver);
     return result;
   }
 
