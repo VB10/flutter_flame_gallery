@@ -1,15 +1,14 @@
 name: Publish to pub.dev
 
-# Each package has its own tag, because pub.dev checks that the tag matches
-# the package version (tag pattern per package in pub.dev admin ->
-# Automated publishing):
-#   flame_gallery_core   -> flame_gallery_core-v{{version}}
-#   flame_gallery_slice  -> flame_gallery_slice-v{{version}}   (same for runner,
-#   match, rhythm)
-#   flame_gallery        -> flame_gallery-v{{version}}
-# Order: core first, then games, then the facade. The very first version of
-# every package must be published by hand; pub.dev only allows automated
-# publishing for packages that already exist.
+# Publishes the one package named by the tag this run is on
+# (<package>-v<version>, e.g. flame_gallery_core-v0.2.0). Normally started by
+# release.yml after a merge to main; pushing such a tag by hand works too.
+#
+# pub.dev admin -> Automated publishing, per package: repository
+# VB10/flutter_flame_gallery, tag pattern <package>-v{{version}}, and
+# "Enable publishing from workflow_dispatch events" (release.yml dispatches
+# this workflow on the tag). The first version of every package must be
+# published by hand.
 on:
   push:
     tags:
@@ -19,109 +18,35 @@ on:
       - "flame_gallery_match-v[0-9]+.[0-9]+.[0-9]+*"
       - "flame_gallery_rhythm-v[0-9]+.[0-9]+.[0-9]+*"
       - "flame_gallery-v[0-9]+.[0-9]+.[0-9]+*"
-
   workflow_dispatch:
-    inputs:
-      package:
-        description: "Package to publish to pub.dev"
-        required: true
-        type: choice
-        default: "all"
-        options:
-          - "all"
-          - "flame_gallery_core"
-          - "flame_gallery_slice"
-          - "flame_gallery_runner"
-          - "flame_gallery_match"
-          - "flame_gallery_rhythm"
-          - "flame_gallery"
+
+concurrency:
+  group: publish-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
-  core:
-    if: |
-      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_core')) ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_core-v'))
-    permissions:
-      id-token: write
-    uses: ./.github/workflows/_publish_package.yml
-    with:
-      package: flame_gallery_core
+  resolve:
+    name: Resolve package from tag
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.tag.outputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: tag
+        run: |
+          if [[ "$GITHUB_REF_TYPE" != tag ]]; then
+            echo "::error::Run this workflow on a <package>-v<version> tag, not on a branch."
+            exit 1
+          fi
+          echo "package=$(tool/release.sh check-tag "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
 
-  slice:
-    needs: [core]
-    if: |
-      always() &&
-      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
-      (
-      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_slice')) ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_slice-v'))
-      )
+  publish:
+    needs: resolve
     permissions:
       id-token: write
     uses: ./.github/workflows/_publish_package.yml
     with:
-      package: flame_gallery_slice
-
-  runner:
-    needs: [core]
-    if: |
-      always() &&
-      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
-      (
-      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_runner')) ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_runner-v'))
-      )
-    permissions:
-      id-token: write
-    uses: ./.github/workflows/_publish_package.yml
-    with:
-      package: flame_gallery_runner
-
-  match:
-    needs: [core]
-    if: |
-      always() &&
-      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
-      (
-      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_match')) ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_match-v'))
-      )
-    permissions:
-      id-token: write
-    uses: ./.github/workflows/_publish_package.yml
-    with:
-      package: flame_gallery_match
-
-  rhythm:
-    needs: [core]
-    if: |
-      always() &&
-      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
-      (
-      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery_rhythm')) ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery_rhythm-v'))
-      )
-    permissions:
-      id-token: write
-    uses: ./.github/workflows/_publish_package.yml
-    with:
-      package: flame_gallery_rhythm
-
-  facade:
-    needs: [core, slice, runner, match, rhythm]
-    if: |
-      always() &&
-      (needs.core.result == 'success' || needs.core.result == 'skipped') &&
-      (needs.slice.result == 'success' || needs.slice.result == 'skipped') &&
-      (needs.runner.result == 'success' || needs.runner.result == 'skipped') &&
-      (needs.match.result == 'success' || needs.match.result == 'skipped') &&
-      (needs.rhythm.result == 'success' || needs.rhythm.result == 'skipped') &&
-      (
-      (github.event_name == 'workflow_dispatch' && (inputs.package == 'all' || inputs.package == 'flame_gallery')) ||
-      (github.event_name == 'push' && startsWith(github.ref_name, 'flame_gallery-v'))
-      )
-    permissions:
-      id-token: write
-    uses: ./.github/workflows/_publish_package.yml
-    with:
-      package: flame_gallery
+      package: ${{ needs.resolve.outputs.package }}

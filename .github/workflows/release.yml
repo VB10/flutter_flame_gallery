@@ -1,0 +1,55 @@
+name: Release
+
+# After CI passes on main, ships every package whose pubspec version is not on
+# pub.dev yet: tags it <package>-v<version> and runs publish.yml on that tag,
+# one package at a time in dependency order (core -> games -> facade). A
+# failed publish stops the rest.
+#
+# So a release is just a version bump: bump only core to ship core, only one
+# game to ship that game, or bump several in one PR to ship them together.
+# Run it by hand to retry one package (for example after a failed publish).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package to release (its pubspec version must not be on pub.dev yet)"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - flame_gallery_core
+          - flame_gallery_slice
+          - flame_gallery_runner
+          - flame_gallery_match
+          - flame_gallery_rhythm
+          - flame_gallery
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # push the release tags
+  actions: write # start and watch publish.yml
+
+jobs:
+  release:
+    name: Tag and publish
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Release unpublished versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ inputs.package != 'all' && inputs.package || '' }}
+        run: tool/release.sh release "$PACKAGE"

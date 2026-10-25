@@ -30,6 +30,9 @@ melos:
     test:
       description: Run tests for packages that have a test directory.
       run: melos exec -c 1 --dir-exists=test --fail-fast -- "flutter test"
+    release:plan:
+      description: List packages whose pubspec version is not on pub.dev yet (what release.yml would ship).
+      run: ./tool/release.sh plan
     e2e:ios:
       description: Maestro smoke suite on the booted iOS simulator (install the app first).
       run: PLATFORM=ios ./apps/example/maestro/run_maestro_test.sh

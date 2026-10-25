@@ -24,6 +24,7 @@ melos run format           # dart format
 cd apps/example && flutter run
 melos run e2e:ios          # Maestro smoke suite (DEVICE=<udid> optional)
 melos run e2e:android      # same on an emulator; build+install the app first
+melos run release:plan     # packages release.yml would publish (version not on pub.dev)
 ```
 
 ## Layout
@@ -37,7 +38,8 @@ packages/
   flame_gallery/   facade: FlameGallery.show + re-exports core and all games.
 apps/example/      demo host app (iOS, Android, web; lib/app, lib/features/<feature>/{model,service,view}) + maestro/.
 site/              GitHub Pages landing page (pages.yml adds the web demo under /play/).
-.github/workflows/ ci.yml (format, analyze, test, publish dry-run, web build), publish.yml (per package tags), pages.yml.
+.github/workflows/ ci.yml (format, analyze, test, publish dry-run, web build), release.yml (after green CI on main: tag + publish unpublished versions), publish.yml (one package per <package>-v<version> tag), pages.yml.
+tool/release.sh    release planning, tagging and tag checks used by the workflows.
 ```
 
 ### Dependency rules (enforced in review)
@@ -122,7 +124,7 @@ Use the `add-game` skill (`.claude/skills/add-game`) to scaffold a new game.
 
 ## Publishing
 
-Package names are `flame_gallery*` (all MIT, repo github.com/VB10/flutter_flame_gallery). Every package needs README, CHANGELOG, LICENSE, `example/example.md`; the facade carries the pub.dev gallery (`screenshots:` in its pubspec). Order: core → games → facade. First versions by hand (`flutter pub publish`), later via tags `<package>-v<version>` (publish.yml, OIDC). `flutter pub publish --dry-run` must report 0 warnings; the repo must be a git repo or `build/` leaks into the archive.
+Package names are `flame_gallery*` (all MIT, repo github.com/VB10/flutter_flame_gallery). Every package needs README, CHANGELOG, LICENSE, `example/example.md`; the facade carries the pub.dev gallery (`screenshots:` in its pubspec). Order: core → games → facade. First versions by hand (`flutter pub publish`). After that a release is a version bump: when CI is green on `main`, `release.yml` tags every package whose pubspec version is not on pub.dev (`<package>-v<version>`) and runs `publish.yml` on each tag in order, waiting for each (OIDC; pub.dev must allow workflow_dispatch). Bump only what should ship, with its CHANGELOG entry; bump internal constraints together with versions. Manual retry: run Release with one package. `flutter pub publish --dry-run` must report 0 warnings; the repo must be a git repo or `build/` leaks into the archive.
 
 ## IP
 

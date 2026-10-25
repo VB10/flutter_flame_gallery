@@ -161,11 +161,26 @@ New games: copy the shape of `packages/flame_gallery_slice` (or ask Claude Code 
 ```mermaid
 graph LR
   pr["Pull request"] --> ci["ci.yml<br/>format · analyze · test<br/>publish dry run · web build"]
-  main["Push to main"] --> pages["pages.yml<br/>site + playground → GitHub Pages"]
-  tag["Tag &lt;package&gt;-v&lt;version&gt;"] --> publish["publish.yml<br/>core → games → facade<br/>pub.dev OIDC"]
+  main["Merge to main"] --> ci2["ci.yml"]
+  main --> pages["pages.yml<br/>site + playground → GitHub Pages"]
+  ci2 -- green --> release["release.yml<br/>versions not on pub.dev yet<br/>core → games → facade"]
+  release -- "tag &lt;package&gt;-v&lt;version&gt;<br/>one at a time" --> publish["publish.yml<br/>pub.dev OIDC"]
 ```
 
-Every package is versioned and tagged on its own (`flame_gallery_core-v0.1.0`, ...). The first version of each package is published by hand; later versions publish from tags through pub.dev automated publishing (no secrets).
+Every package is versioned on its own, and **a release is a version bump**. After a merge to `main` turns CI green, `release.yml` picks every package whose `pubspec.yaml` version is not on pub.dev yet, tags it `<package>-v<version>` and runs `publish.yml` on that tag. It goes in dependency order and waits for each publish, so the games never go out before the core they need. A failed publish stops the rest.
+
+| You want to ship | Bump in the PR |
+|---|---|
+| Only the core | `flame_gallery_core` (and the games' `flame_gallery_core:` constraint if the new version falls outside it) |
+| One game | that game; the facade too only when the new version leaves the facade's constraint (`0.1.x` → `0.2.0`) |
+| Everything | every package; internal constraints together with the versions |
+
+Every bumped package also needs its CHANGELOG entry. Preview what would ship with `melos run release:plan`. To retry or ship one package by hand: Actions → Release → Run workflow → pick the package. Pushing a `<package>-v<version>` tag yourself also publishes that package.
+
+One time setup per package on pub.dev:
+
+1. Publish the first version by hand: `cd packages/<package> && flutter pub publish`. pub.dev only automates packages that already exist; `release.yml` skips new packages with a warning.
+2. Admin → Automated publishing → GitHub Actions: repository `VB10/flutter_flame_gallery`, tag pattern `<package>-v{{version}}`, and turn on **Enable publishing from workflow_dispatch events**. No secrets are stored; pub.dev trusts the GitHub OIDC token.
 
 ## Roadmap
 
